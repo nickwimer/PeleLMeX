@@ -194,6 +194,7 @@ PeleLM::Setup()
 void
 PeleLM::readParameters()
 {
+  amrex::Print() << "Reading PeleLMeX parameters ... \n";
   BL_PROFILE("PeleLMeX::readParameters()");
 
   readIOParameters();
@@ -205,6 +206,8 @@ PeleLM::readParameters()
   // -----------------------------------------
   pp.query("run_mode", m_run_mode);
   pp.query("v", m_verbose);
+
+  amrex::Print() << " Running in " << m_run_mode << " mode \n";
 
   // -----------------------------------------
   // Boundary conditions
@@ -229,7 +232,8 @@ PeleLM::readParameters()
   m_closed_chamber = (isOpenDomain) != 0 ? 0 : 1;
   pp.query("closed_chamber", m_closed_chamber);
   if ((verbose != 0) && (m_closed_chamber != 0)) {
-    Print() << " Simulation performed with the closed chamber algorithm \n";
+    Print() << " Simulation performed with the closed chamber algorithm
+      \n ";
   }
 
 #ifdef PELE_USE_EFIELD
@@ -248,7 +252,8 @@ PeleLM::readParameters()
     } else if (lo_bc_char[idim] == "Neumann") {
       m_phiV_bc.setLo(idim, 2);
     } else {
-      amrex::Abort("Wrong PhiV bc. Should be : Interior, Dirichlet or Neumann");
+        amrex::Abort("Wrong PhiV bc. Should be : Interior, Dirichlet or
+        Neumann");
     }
     if (hi_bc_char[idim] == "Interior") {
       m_phiV_bc.setHi(idim, 0);
@@ -257,7 +262,8 @@ PeleLM::readParameters()
     } else if (hi_bc_char[idim] == "Neumann") {
       m_phiV_bc.setHi(idim, 2);
     } else {
-      amrex::Abort("Wrong PhiV bc. Should be : Interior, Dirichlet or Neumann");
+        amrex::Abort("Wrong PhiV bc. Should be : Interior, Dirichlet or
+        Neumann");
     }
   }
 
@@ -319,9 +325,10 @@ PeleLM::readParameters()
     m_gravity[idim] = grav[idim];
   }
 
-  // Will automatically add pressure gradient for channel flow to maintain mass
-  // flow rate of initial condition
-  pp.query("do_periodic_channel", m_do_periodic_channel);
+  // Will automatically add pressure gradient for channel flow to maintain
+  mass
+    // flow rate of initial condition
+    pp.query("do_periodic_channel", m_do_periodic_channel);
   if (m_do_periodic_channel != 0) {
     pp.get("periodic_channel_dir", m_periodic_channel_dir);
   }
@@ -339,11 +346,12 @@ PeleLM::readParameters()
       pp.query("les_cm_wale", m_les_cm_wale);
     } else if (m_les_model == "Sigma") {
       pp.query("les_cs_sigma", m_les_cs_sigma);
-      AMREX_ALWAYS_ASSERT(AMREX_SPACEDIM == 3); // Sigma only available in 3D
+      AMREX_ALWAYS_ASSERT(AMREX_SPACEDIM == 3); // Sigma only available in
+      3D
     } else {
-      amrex::Abort(
-        "LES model must be None, Smagorinsky, WALE or Sigma. Invalid choie: " +
-        m_les_model);
+        amrex::Abort(
+          "LES model must be None, Smagorinsky, WALE or Sigma. Invalid choie:
+          " + m_les_model);
     }
     m_do_les = true;
     m_les_verbose = m_verbose;
@@ -353,7 +361,8 @@ PeleLM::readParameters()
       m_turb_visc_time.push_back(-1.0E200);
     }
 #ifdef PELE_USE_EFIELD
-    amrex::Abort("LES implementation is not yet compatible with efield/ions");
+      amrex::Abort("LES implementation is not yet compatible with
+      efield/ions");
 #endif
   }
 
@@ -367,7 +376,8 @@ PeleLM::readParameters()
   pp.query("fixed_Pr", m_fixed_Pr);
   if (m_unity_Le != 0) {
     m_fixed_Le = 1;
-    amrex::Print() << "WARNING: unity_Le is deprecated and will be removed in "
+    amrex::Print() << "WARNING: unity_Le is deprecated and will be removed
+      in "
                       "future version, use fixed_Le instead"
                    << std::endl;
   }
@@ -390,10 +400,12 @@ PeleLM::readParameters()
     pp.query("Prandtl", Prandtl);
     m_Prandtl_inv = 1.0 / Prandtl;
   }
-  if (m_fixed_Le != 0 && m_fixed_Pr != 0 && !m_do_les) { // calculate Schmidt in
-                                                         // case of no LES from
-                                                         // Lewis and Prandtl
-    m_Schmidt_inv = m_Lewis_inv * m_Prandtl_inv;
+  if (m_fixed_Le != 0 && m_fixed_Pr != 0 && !m_do_les) { // calculate
+    Schmidt in
+      // case of no LES
+      from
+        // Lewis and
+        Prandtl m_Schmidt_inv = m_Lewis_inv * m_Prandtl_inv;
   }
   if (m_do_les) { // calculate Lewis in case of LES
     m_Lewis_inv = m_Prandtl_inv / m_Schmidt_inv;
@@ -404,7 +416,8 @@ PeleLM::readParameters()
     (m_fixed_Le != 0 || m_fixed_Pr != 0)) {
     m_use_wbar = 0;
     m_use_soret = 0;
-    amrex::Print() << "WARNING: use_wbar and use_soret set to false because "
+    amrex::Print() << "WARNING: use_wbar and use_soret set to false because
+                      "
                       "fixed_Pr or fixed_Le is true"
                    << std::endl;
   }
@@ -460,7 +473,8 @@ PeleLM::readParameters()
                    , m_max_grid_size_chem[1] = mgsc[1];
                    , m_max_grid_size_chem[2] = mgsc[2]);
     } else {
-      Abort("peleLM.max_grid_size_chem should have 1 or AMREX_SPACEDIM values");
+        Abort("peleLM.max_grid_size_chem should have 1 or AMREX_SPACEDIM
+        values");
     }
   }
 
@@ -517,7 +531,8 @@ PeleLM::readParameters()
     m_advection_type = "BDS";
     m_Godunov_ppm = 0;
   } else {
-    Abort("Unknown 'advection_scheme'. Recognized options are: Godunov_PLM, "
+    Abort("Unknown 'advection_scheme'. Recognized options are: Godunov_PLM,
+          "
           "Godunov_PPM or Godunov_BDS");
   }
   m_predict_advection_type =

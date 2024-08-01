@@ -2,19 +2,42 @@ function(build_pele_exe pele_exe_name pele_physics_lib_name)
 
   set(SRC_DIR ${CMAKE_SOURCE_DIR}/Source)
 
-  add_executable(${pele_exe_name} "")
+  if (PELE_LIB)
+    add_library(${pele_exe_name} "")
+
+    # add_library(${pele_physics_lib_name})
+    add_library(PeleLMeX::${pele_physics_lib_name} ALIAS ${pele_physics_lib_name})
+    set(_BUILDINFO_SRC ${pele_physics_lib_name})
+    list(APPEND _ALL_TARGETS ${pele_physics_lib_name})
+  else()
+    add_executable(${pele_exe_name} "")
+  endif()
 
   if(CLANG_TIDY_EXE)
     set_target_properties(${pele_exe_name} PROPERTIES CXX_CLANG_TIDY
                           "${CLANG_TIDY_EXE};--config-file=${CMAKE_SOURCE_DIR}/.clang-tidy")
   endif()
 
-  target_sources(${pele_exe_name}
-     PRIVATE
-       pelelmex_prob_parm.H
-       pelelmex_prob.H
-       pelelmex_prob.cpp
-  )
+  if(PELE_LIB)
+    target_sources(${pele_exe_name}
+      # PRIVATE
+      PUBLIC
+      # SHARED
+        Source/pelelmex_prob_parm.H
+        Source/pelelmex_prob.H
+        Source/pelelmex_prob.cpp
+        Source/main.cpp
+        Source/PeleLMeX.H
+        Source/PeleLMeX.cpp
+    )
+  else()  
+    target_sources(${pele_exe_name}
+      PRIVATE
+        pelelmex_prob_parm.H
+        pelelmex_prob.H
+        pelelmex_prob.cpp
+    )
+  endif()
 
   target_include_directories(${pele_exe_name} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
   target_include_directories(${pele_exe_name} PRIVATE ${SRC_DIR})
@@ -104,7 +127,11 @@ function(build_pele_exe pele_exe_name pele_physics_lib_name)
     target_compile_options(${pele_exe_name} PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-Xptxas --disable-optimizer-constants>)
   endif()
 
-  target_link_libraries(${pele_exe_name} PRIVATE ${pele_physics_lib_name} AMReX-Hydro::amrex_hydro_api AMReX::amrex)
+  if (PELE_LIB)
+    target_link_libraries(${pele_exe_name} PRIVATE ${pele_physics_lib_name} AMReX-Hydro::amrex_hydro_api AMReX::amrex)
+  else()
+    target_link_libraries(${pele_exe_name} PRIVATE ${pele_physics_lib_name} AMReX-Hydro::amrex_hydro_api AMReX::amrex)
+  endif()
 
   install(TARGETS ${pele_exe_name}
           RUNTIME DESTINATION bin

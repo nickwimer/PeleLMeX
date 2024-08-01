@@ -3,6 +3,12 @@
 tmp_build*
 compile_commands.json
 .ccls-cache
+*.dylib
+*.so
+build_py/*
+Build/*
+_tmppythonbuild/*
+*.egg-info
 
 # Run output
 *.p3d
