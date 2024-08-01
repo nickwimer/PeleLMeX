@@ -301,7 +301,8 @@ PeleLM::readParameters()
     } else if (lo_bc_char[idim] == "Neumann") {
       m_phiV_bc.setLo(idim, 2);
     } else {
-      amrex::Abort("Wrong PhiV bc. Should be : Interior, Dirichlet or Neumann");
+        amrex::Abort("Wrong PhiV bc. Should be : Interior, Dirichlet or
+        Neumann");
     }
     if (hi_bc_char[idim] == "Interior") {
       m_phiV_bc.setHi(idim, 0);
@@ -310,7 +311,8 @@ PeleLM::readParameters()
     } else if (hi_bc_char[idim] == "Neumann") {
       m_phiV_bc.setHi(idim, 2);
     } else {
-      amrex::Abort("Wrong PhiV bc. Should be : Interior, Dirichlet or Neumann");
+        amrex::Abort("Wrong PhiV bc. Should be : Interior, Dirichlet or
+        Neumann");
     }
   }
 
@@ -372,9 +374,10 @@ PeleLM::readParameters()
     m_gravity[idim] = grav[idim];
   }
 
-  // Will automatically add pressure gradient for channel flow to maintain mass
-  // flow rate of initial condition
-  pp.query("do_periodic_channel", m_do_periodic_channel);
+  // Will automatically add pressure gradient for channel flow to maintain
+  mass
+    // flow rate of initial condition
+    pp.query("do_periodic_channel", m_do_periodic_channel);
   if (m_do_periodic_channel != 0) {
     pp.get("periodic_channel_dir", m_periodic_channel_dir);
   }
@@ -463,7 +466,8 @@ PeleLM::readParameters()
       pp.query("les_cm_wale", m_les_cm_wale);
     } else if (m_les_model == "Sigma") {
       pp.query("les_cs_sigma", m_les_cs_sigma);
-      AMREX_ALWAYS_ASSERT(AMREX_SPACEDIM == 3); // Sigma only available in 3D
+      AMREX_ALWAYS_ASSERT(AMREX_SPACEDIM == 3); // Sigma only available in
+      3D
     } else {
       amrex::Abort(
         "LES model must be None, Smagorinsky, WALE or Sigma. Invalid choice: " +

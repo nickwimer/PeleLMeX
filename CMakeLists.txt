@@ -36,6 +36,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # set_default_install_dirs()
 enable_testing()
 include(CTest)
+include(peleFunctions)
 
 # General options
 include(CMakeDependentOption)
