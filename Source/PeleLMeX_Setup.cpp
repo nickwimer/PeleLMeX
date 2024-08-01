@@ -232,8 +232,7 @@ PeleLM::readParameters()
   m_closed_chamber = (isOpenDomain) != 0 ? 0 : 1;
   pp.query("closed_chamber", m_closed_chamber);
   if ((verbose != 0) && (m_closed_chamber != 0)) {
-    Print() << " Simulation performed with the closed chamber algorithm
-      \n ";
+    Print() << " Simulation performed with the closed chamber algorithm \n ";
   }
 
 #ifdef PELE_USE_EFIELD

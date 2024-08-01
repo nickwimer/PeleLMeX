@@ -207,7 +207,7 @@ if (PELE_PYTHON)
   ########################### pybind11 ##################################
   message(STATUS "pybind11 Configure Section")
   set(PYBIND11_SUBMOD_LOCATION "${CMAKE_SOURCE_DIR}/Submodules/pybind11")
-  include(SetPybind11Options)
+  # include(SetPybind11Options)
 
   message(STATUS "Compiling local pybind11 ...")
   message(STATUS "pybind11 source path: ${PYBIND11_SUBMOD_LOCATION}")
@@ -222,7 +222,7 @@ if (PELE_PYTHON)
   ########################### pyAMReX ##################################
   message(STATUS "pyAMReX Configure Section")
   set(PYAMREX_SUBMOD_LOCATION "${CMAKE_SOURCE_DIR}/Submodules/pyAMReX")
-  include(SetPyAMReXOptions)
+  # include(SetPyAMReXOptions)
 
   message(STATUS "Compiling local pyAMReX ...")
   message(STATUS "pyAMReX source path: ${PYAMREX_SUBMOD_LOCATION}")
