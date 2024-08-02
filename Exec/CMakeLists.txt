@@ -1,4 +1,6 @@
 #add_subdirectory(Efield)
 #add_subdirectory(Production)
-add_subdirectory(RegTests)
+if (NOT PELE_LIB)
+    add_subdirectory(RegTests)
+endif()
 #add_subdirectory(UnitTests)

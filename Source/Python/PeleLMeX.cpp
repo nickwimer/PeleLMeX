@@ -26,7 +26,7 @@ void
 init_pelelmex(py::module& m)
 {
   // py::class_<PeleLM>(m, "PeleLM");
-  PeleLM pelelmex;
+  // PeleLM pelelmex;
   m.def(
     "read_params", &PeleLM::readParameters, "Read parameters from inputs file");
 
