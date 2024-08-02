@@ -11,6 +11,8 @@ include(peleFunctions)
 # Output Dircetories
 set_default_build_dirs()
 set_default_install_dirs()
+enable_testing()
+include(CTest)
 
 # General options
 include(CMakeDependentOption)
@@ -259,6 +261,7 @@ include(SetRpath)
 
 enable_testing()
 include(CTest)
+add_subdirectory(Exec)
 add_subdirectory(Tests)
 add_subdirectory(${CMAKE_SOURCE_DIR}/Submodules/PelePhysics/Testing/Exec/Radiation)
 
