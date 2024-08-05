@@ -1,50 +1,50 @@
 function(find_pyamrex)
-    if(WarpX_pyamrex_src)
+    if(PeleLMeX_pyamrex_src)
         message(STATUS "Compiling local pyAMReX ...")
-        message(STATUS "pyAMReX source path: ${WarpX_pyamrex_src}")
-        if(NOT IS_DIRECTORY ${WarpX_pyamrex_src})
-            message(FATAL_ERROR "Specified directory WarpX_pyamrex_src='${WarpX_pyamrex_src}' does not exist!")
+        message(STATUS "pyAMReX source path: ${PeleLMeX_pyamrex_src}")
+        if(NOT IS_DIRECTORY ${PeleLMeX_pyamrex_src})
+            message(FATAL_ERROR "Specified directory PeleLMeX_pyamrex_src='${PeleLMeX_pyamrex_src}' does not exist!")
         endif()
-    elseif(WarpX_pyamrex_internal)
+    elseif(PeleLMeX_pyamrex_internal)
         message(STATUS "Downloading pyAMReX ...")
-        message(STATUS "pyAMReX repository: ${WarpX_pyamrex_repo} (${WarpX_pyamrex_branch})")
+        message(STATUS "pyAMReX repository: ${PeleLMeX_pyamrex_repo} (${PeleLMeX_pyamrex_branch})")
         include(FetchContent)
     endif()
 
     # transitive control for AMReX & pybind11 superbuild
     #   note: if we do superbuilds, we want the same AMReX commit for
-    #           AMReX->ABLASTR->WarpX and
-    #           AMReX->pyAMReX->pyWarpX
+    #           AMReX->ABLASTR->PeleLMeX and
+    #           AMReX->pyAMReX->pyPeleLMeX
     #   note: this is performed after we did the transitive logic control in
     #         ABLASTR.cmake
-    set(pyAMReX_amrex_internal ${WarpX_amrex_internal} CACHE BOOL
+    set(pyAMReX_amrex_internal ${PeleLMeX_amrex_internal} CACHE BOOL
         "Download & build AMReX" FORCE)
-    set(pyAMReX_pybind11_internal ${WarpX_pybind11_internal} CACHE BOOL
+    set(pyAMReX_pybind11_internal ${PeleLMeX_pybind11_internal} CACHE BOOL
         "Download & build AMReX" FORCE)
 
-    if(WarpX_amrex_src)
-        set(pyAMReX_amrex_src ${WarpX_amrex_src} CACHE PATH
+    if(PeleLMeX_amrex_src)
+        set(pyAMReX_amrex_src ${PeleLMeX_amrex_src} CACHE PATH
             "Local path to AMReX source directory (preferred if set)" FORCE)
-    elseif(WarpX_amrex_internal)
-        if(WarpX_amrex_repo)
-            set(pyAMReX_amrex_repo ${WarpX_amrex_repo} CACHE STRING
-                "Repository URI to pull and build AMReX from if(WarpX_amrex_internal)" FORCE)
+    elseif(PeleLMeX_amrex_internal)
+        if(PeleLMeX_amrex_repo)
+            set(pyAMReX_amrex_repo ${PeleLMeX_amrex_repo} CACHE STRING
+                "Repository URI to pull and build AMReX from if(PeleLMeX_amrex_internal)" FORCE)
         endif()
-        if(WarpX_amrex_branch)
-            set(pyAMReX_amrex_branch ${WarpX_amrex_branch} CACHE STRING
-                "Repository branch for WarpX_amrex_repo if(WarpX_amrex_internal)" FORCE)
+        if(PeleLMeX_amrex_branch)
+            set(pyAMReX_amrex_branch ${PeleLMeX_amrex_branch} CACHE STRING
+                "Repository branch for PeleLMeX_amrex_repo if(PeleLMeX_amrex_internal)" FORCE)
         endif()
     endif()
 
-    if(WarpX_pyamrex_internal OR WarpX_pyamrex_src)
+    if(PeleLMeX_pyamrex_internal OR PeleLMeX_pyamrex_src)
         set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
-        if(WarpX_pyamrex_src)
-            add_subdirectory(${WarpX_pyamrex_src} _deps/localpyamrex-build/)
+        if(PeleLMeX_pyamrex_src)
+            add_subdirectory(${PeleLMeX_pyamrex_src} _deps/localpyamrex-build/)
         else()
             FetchContent_Declare(fetchedpyamrex
-                GIT_REPOSITORY ${WarpX_pyamrex_repo}
-                GIT_TAG        ${WarpX_pyamrex_branch}
+                GIT_REPOSITORY ${PeleLMeX_pyamrex_repo}
+                GIT_TAG        ${PeleLMeX_pyamrex_branch}
                 BUILD_IN_SOURCE 0
             )
             FetchContent_GetProperties(fetchedpyamrex)
@@ -62,7 +62,7 @@ function(find_pyamrex)
             mark_as_advanced(FETCHCONTENT_UPDATES_DISCONNECTED)
             mark_as_advanced(FETCHCONTENT_UPDATES_DISCONNECTED_FETCHEDpyamrex)
         endif()
-    elseif(NOT WarpX_pyamrex_internal)
+    elseif(NOT PeleLMeX_pyamrex_internal)
         # TODO: MPI control
         find_package(pyAMReX 24.07 CONFIG REQUIRED)
         message(STATUS "pyAMReX: Found version '${pyAMReX_VERSION}'")
@@ -70,17 +70,17 @@ function(find_pyamrex)
 endfunction()
 
 # local source-tree
-set(WarpX_pyamrex_src ""
+set(PeleLMeX_pyamrex_src ""
     CACHE PATH
     "Local path to pyAMReX source directory (preferred if set)")
 
 # Git fetcher
-option(WarpX_pyamrex_internal "Download & build pyAMReX" ON)
-set(WarpX_pyamrex_repo "https://github.com/AMReX-Codes/pyamrex.git"
+option(PeleLMeX_pyamrex_internal "Download & build pyAMReX" ON)
+set(PeleLMeX_pyamrex_repo "https://github.com/AMReX-Codes/pyamrex.git"
     CACHE STRING
-    "Repository URI to pull and build pyamrex from if(WarpX_pyamrex_internal)")
-set(WarpX_pyamrex_branch "24.07"
+    "Repository URI to pull and build pyamrex from if(PeleLMeX_pyamrex_internal)")
+set(PeleLMeX_pyamrex_branch "24.07"
     CACHE STRING
-    "Repository branch for WarpX_pyamrex_repo if(WarpX_pyamrex_internal)")
+    "Repository branch for PeleLMeX_pyamrex_repo if(PeleLMeX_pyamrex_internal)")
 
 find_pyamrex()

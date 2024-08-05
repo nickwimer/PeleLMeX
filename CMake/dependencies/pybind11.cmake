@@ -1,24 +1,24 @@
 function(find_pybind11)
-    if(WarpX_pybind11_src)
+    if(PeleLMeX_pybind11_src)
         message(STATUS "Compiling local pybind11 ...")
-        message(STATUS "pybind11 source path: ${WarpX_pybind11_src}")
-        if(NOT IS_DIRECTORY ${WarpX_pybind11_src})
-            message(FATAL_ERROR "Specified directory WarpX_pybind11_src='${WarpX_pybind11_src}' does not exist!")
+        message(STATUS "pybind11 source path: ${PeleLMeX_pybind11_src}")
+        if(NOT IS_DIRECTORY ${PeleLMeX_pybind11_src})
+            message(FATAL_ERROR "Specified directory PeleLMeX_pybind11_src='${PeleLMeX_pybind11_src}' does not exist!")
         endif()
-    elseif(WarpX_pybind11_internal)
+    elseif(PeleLMeX_pybind11_internal)
         message(STATUS "Downloading pybind11 ...")
-        message(STATUS "pybind11 repository: ${WarpX_pybind11_repo} (${WarpX_pybind11_branch})")
+        message(STATUS "pybind11 repository: ${PeleLMeX_pybind11_repo} (${PeleLMeX_pybind11_branch})")
         include(FetchContent)
     endif()
-    if(WarpX_pybind11_internal OR WarpX_pybind11_src)
+    if(PeleLMeX_pybind11_internal OR PeleLMeX_pybind11_src)
         set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
-        if(WarpX_pybind11_src)
-            add_subdirectory(${WarpX_pybind11_src} _deps/localpybind11-build/)
+        if(PeleLMeX_pybind11_src)
+            add_subdirectory(${PeleLMeX_pybind11_src} _deps/localpybind11-build/)
         else()
             FetchContent_Declare(fetchedpybind11
-                GIT_REPOSITORY ${WarpX_pybind11_repo}
-                GIT_TAG        ${WarpX_pybind11_branch}
+                GIT_REPOSITORY ${PeleLMeX_pybind11_repo}
+                GIT_TAG        ${PeleLMeX_pybind11_branch}
                 BUILD_IN_SOURCE 0
             )
             FetchContent_GetProperties(fetchedpybind11)
@@ -43,17 +43,17 @@ function(find_pybind11)
 endfunction()
 
 # local source-tree
-set(WarpX_pybind11_src ""
+set(PeleLMeX_pybind11_src ""
     CACHE PATH
     "Local path to pybind11 source directory (preferred if set)")
 
 # Git fetcher
-option(WarpX_pybind11_internal "Download & build pybind11" ON)
-set(WarpX_pybind11_repo "https://github.com/pybind/pybind11.git"
+option(PeleLMeX_pybind11_internal "Download & build pybind11" ON)
+set(PeleLMeX_pybind11_repo "https://github.com/pybind/pybind11.git"
     CACHE STRING
-    "Repository URI to pull and build pybind11 from if(WarpX_pybind11_internal)")
-set(WarpX_pybind11_branch "v2.12.0"
+    "Repository URI to pull and build pybind11 from if(PeleLMeX_pybind11_internal)")
+set(PeleLMeX_pybind11_branch "v2.12.0"
     CACHE STRING
-    "Repository branch for WarpX_pybind11_repo if(WarpX_pybind11_internal)")
+    "Repository branch for PeleLMeX_pybind11_repo if(PeleLMeX_pybind11_internal)")
 
 find_pybind11()

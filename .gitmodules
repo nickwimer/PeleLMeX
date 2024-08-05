@@ -6,12 +6,3 @@
 	path = Submodules/PelePhysics
 	url = https://github.com/AMReX-Combustion/PelePhysics.git
 	shallow = true
-
-[submodule "Submodules/pyAMReX"]
-	path = Submodules/pyAMReX
-	url = https://github.com/AMReX-Codes/pyamrex.git
-	shallow = true
-[submodule "Submodules/pybind11"]
-	path = Submodules/pybind11
-	url = https://github.com/pybind/pybind11.git
-	shallow = true

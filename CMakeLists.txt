@@ -178,64 +178,19 @@ add_subdirectory(${SUNDIALS_SUBMOD_LOCATION} _deps/localsundials-build/)
 include(AMReXBuildInfo)
 # endif()
 
-# if (PELE_LIB)
-# ############################ PelePhysics ##############################
-  # message(STATUS "PelePhysics Configure Section")
-#   set(PELE_PHYSICS_SUBMOD_LOCATION "${CMAKE_SOURCE_DIR}/Submodules/PelePhysics")
-
-#   include(BuildPelePhysicsLib)
-#   build_pele_physics_lib(pelephysics)
-
-#   # # include(SetPelePhysicsOptions)
-
-#   # message(STATUS "Compiling local PelePhysics ...")
-#   # message(STATUS "PelePhysics source path: ${PELE_PHYSICS_SUBMOD_LOCATION}")
-#   # if(NOT IS_DIRECTORY ${PELE_PHYSICS_SUBMOD_LOCATION})
-#   #   message(FATAL_ERROR "Specified directory PELE_PHYSICS_SUBMOD_LOCATION='${PELE_PHYSICS_SUBMOD_LOCATION}' does not exist!")
-#   # endif()
-#   # set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
-#   # add_subdirectory(${PELE_PHYSICS_SUBMOD_LOCATION} _deps/localpelephysics-build/)
-
-#   # add_library(PeleLMeX::thirdparty::pelephysics INTERFACE IMPORTED)
-#   # target_link_libraries(PeleLMeX::thirdparty::pelephysics INTERFACE PelePhysics::pelephysics)
-
-# endif()
 
 if (PELE_PYTHON)
   find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
 
   set_default_install_dirs_python()
 
-  ########################### pybind11 ##################################
-  message(STATUS "pybind11 Configure Section")
-  set(PYBIND11_SUBMOD_LOCATION "${CMAKE_SOURCE_DIR}/Submodules/pybind11")
-  # include(SetPybind11Options)
-
-  message(STATUS "Compiling local pybind11 ...")
-  message(STATUS "pybind11 source path: ${PYBIND11_SUBMOD_LOCATION}")
-  if(NOT IS_DIRECTORY ${PYBIND11_SUBMOD_LOCATION})
-    message(FATAL_ERROR "Specified directory PYBIND11_SUBMOD_LOCATION='${PYBIND11_SUBMOD_LOCATION}' does not exist!")
-  endif()
-  set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
-
-  add_subdirectory(${PYBIND11_SUBMOD_LOCATION} _deps/localpybind11-build/)
+  # pybind11
+  include(${PeleLMeX_SOURCE_DIR}/cmake/dependencies/pybind11.cmake)
 
 
-  ########################### pyAMReX ##################################
-  message(STATUS "pyAMReX Configure Section")
-  set(PYAMREX_SUBMOD_LOCATION "${CMAKE_SOURCE_DIR}/Submodules/pyAMReX")
-  # include(SetPyAMReXOptions)
+  # pyAMReX
+  include(${PeleLMeX_SOURCE_DIR}/cmake/dependencies/pyAMReX.cmake)
 
-  message(STATUS "Compiling local pyAMReX ...")
-  message(STATUS "pyAMReX source path: ${PYAMREX_SUBMOD_LOCATION}")
-  if(NOT IS_DIRECTORY ${PYAMREX_SUBMOD_LOCATION})
-    message(FATAL_ERROR "Specified directory PYAMREX_SUBMOD_LOCATION='${PYAMREX_SUBMOD_LOCATION}' does not exist!")
-  endif()
-  set(pyAMReX_amrex_src ${PYAMREX_SUBMOD_LOCATION} CACHE PATH
-            "Local path to AMReX source directory (preferred if set)" FORCE)
-  set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
-  
-  add_subdirectory(${PYAMREX_SUBMOD_LOCATION} _deps/localpyamrex-build/)
 
 endif()
 
