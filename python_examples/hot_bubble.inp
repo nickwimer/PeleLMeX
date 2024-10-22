@@ -14,12 +14,12 @@ peleLM.hi_bc = SlipWallAdiab Outflow       SlipWallAdiab
 #-------------------------AMR CONTROL----------------------------
 amr.n_cell          = 16 32 16      # Level 0 number of cells in each direction
 amr.v               = 1                # AMR verbose
-amr.max_level       = 3               # maximum level number allowed
+amr.max_level       = 0               # maximum level number allowed
 amr.ref_ratio       = 2 2 2 2          # refinement ratio
 amr.regrid_int      = 5                # how often to regrid
 amr.n_error_buf     = 1 1 2 2          # number of buffer cells in error est
 amr.grid_eff        = 0.7              # what constitutes an efficient grid
-amr.blocking_factor = 4               # block factor in grid generation (min box size)
+amr.blocking_factor = 16               # block factor in grid generation (min box size)
 amr.max_grid_size   = 64               # max box size
 
 #--------------------------- Problem -------------------------------
@@ -40,7 +40,7 @@ prob.ic_z_dict = tmp@0.0;
 
 # Temperature expression
 prob.ic_temp_expr = rad%EQ%sqrt(x*x+y*y+z*z);if(rad<%EQ%bubble_radius,T_bubble,T_ambient)
-prob.ic_temp_dict = bubble_radius@0.003;T_bubble@450.0;T_ambient@300.0;
+prob.ic_temp_dict = bubble_radius@0.006;T_bubble@450.0;T_ambient@300.0;
 
 # Velocity expressions
 # prob.ic_velx_expr = u0

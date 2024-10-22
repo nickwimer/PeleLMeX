@@ -276,6 +276,7 @@ if (PELE_PHYSICS_ENABLE_RADIATION)
 endif()
 
 
+
 # Targets for installation
 if (PELE_LIB)
 
@@ -477,19 +478,20 @@ if (PELE_PYTHON)
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
   )
 
-  # simplified library alias
-  if(IS_ABSOLUTE ${CMAKE_INSTALL_LIBDIR})
-      set(ABS_INSTALL_LIB_DIR "${CMAKE_INSTALL_LIBDIR}")
-  else()
-      set(ABS_INSTALL_LIB_DIR "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
-  endif()
-  # escape spaces for generated cmake_install.cmake file
-  file(TO_CMAKE_PATH "${ABS_INSTALL_LIB_DIR}" ABS_INSTALL_LIB_DIR)
+    # simplified library alias
+    if(IS_ABSOLUTE ${CMAKE_INSTALL_LIBDIR})
+        set(ABS_INSTALL_LIB_DIR "${CMAKE_INSTALL_LIBDIR}")
+    else()
+        set(ABS_INSTALL_LIB_DIR "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+    endif()
+    # escape spaces for generated cmake_install.cmake file
+    file(TO_CMAKE_PATH "${ABS_INSTALL_LIB_DIR}" ABS_INSTALL_LIB_DIR)
 
-  install(CODE "file(CREATE_LINK
-      $<TARGET_FILE_NAME:${pele_exe_name}>
-      \"${ABS_INSTALL_LIB_DIR}/libpelelmex<TARGET_FILE_SUFFIX:${pele_exe_name}>\"
-      COPY_ON_ERROR SYMBOLIC)")
+    install(CODE "file(CREATE_LINK
+        $<TARGET_FILE_NAME:${pele_exe_name}>
+        \"${ABS_INSTALL_LIB_DIR}/libpelelmex<TARGET_FILE_SUFFIX:${pele_exe_name}>\"
+        COPY_ON_ERROR SYMBOLIC)")
+  endforeach()
 
 
   # pip helpers for pypelelmex package
