@@ -5,9 +5,12 @@ import subprocess
 import sys
 
 import setuptools
-from setuptools import Extension, setup
+from setuptools import Extension, find_packages, setup
 from setuptools.command.build import build
 from setuptools.command.build_ext import build_ext
+
+# dst_path = os.path.join(self.build_lib, "amrex")
+#         shutil.copytree(PYAMREX_libdir, dst_path, dirs_exist_ok=True)
 
 
 class CopyPreBuild(build):
@@ -18,6 +21,7 @@ class CopyPreBuild(build):
         # this can create confusing results with "pip install .", which clones
         # the whole source tree by default
         self.build_base = "_tmppythonbuild"
+        # self.build_base = os.path.join("_tmppythonbuild", "pele")
 
     def run(self):
         # remove existing build directory
@@ -53,6 +57,24 @@ class CopyPreBuild(build):
         dst_path = os.path.join(self.build_lib, "pypelelmex")
         for lib_path in libs_found:
             shutil.copy(lib_path, dst_path)
+        # dst_path = os.path.join(self.build_lib, "amrex")
+        # shutil.copytree(PYAMREX_libdir, dst_path, dirs_exist_ok=True)
+
+        # Get the install_lib command object
+        # install_lib_cmd = self.get_finalized_command("install_lib")
+        # dest_dir = os.path.join(install_lib_cmd.install_dir, "amrex")
+        dest_dir = os.path.join(
+            os.getcwd(), "build_py", "lib", "site-packages", "amrex"
+        )
+        # Define the source directory
+        src_dir = os.path.join(
+            os.getcwd(), "build_py", "_deps", "fetchedpyamrex-src", "src", "amrex"
+        )
+        # Copy files
+        if os.path.exists(src_dir):
+            shutil.copytree(src_dir, dest_dir, dirs_exist_ok=True)
+        else:
+            print(f"Source directory {src_dir} does not exist.")
 
 
 # class CMakeExtension(Extension):
@@ -104,8 +126,10 @@ cxx_modules = []
 cmdclass = {}
 
 PYPELELMEX_LIB_DIR = os.environ.get("PYPELELMEX_LIB_DIR")
+# PYAMREX_libdir = os.environ.get("PYAMREX_LIB_DIR")
 
 print(f"PYPELELMEX_LIB_DIR: {PYPELELMEX_LIB_DIR}")
+# print(f"PYAMREX_libdir: {PYAMREX_libdir}")
 # exit()
 
 env = os.environ.copy()
@@ -134,6 +158,11 @@ setup(
     version="0.1.0",
     packages=["pypelelmex"],
     package_dir={"pypelelmex": "Python/pypelelmex"},
+    # packages=find_packages(),
+    include_package_data=True,
+    # package_data={
+    #     "amrex": ["*"],
+    # },
     author="",
     author_email="",
     description="",
@@ -141,5 +170,8 @@ setup(
     ext_modules=cxx_modules,
     cmdclass=cmdclass,
     install_requires=install_requires,
+    extras_require={
+        "all": ["yt>=4.1.0", "matplotlib"],
+    },
     zip_safe=False,
 )

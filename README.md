@@ -110,6 +110,20 @@ Finally, make with: `make -j`, or if on macOS: `make -j COMP=llvm`. To clean the
 
 To compile and test using CMake, refer to the example `cmake.sh` script in the `Build` directory, or reference the GitHub Actions workflows in the `.github/workflows` directory.
 
+## Python Package
+
+PeleLMeX can now be built as a Python package using a cmake superbuild. It is recommended to use a dedicated python environment for the build such as `conda`. Create a new conda environment with Python >= 3.9, activate the environment, and then follow the instructions below.
+
+To install, follow the following steps:
+
+1) `cd PeleLMeX/`
+2) `cmake -S . build_py -DPELE_PYTHON=ON -DPELE_LIB=ON`
+3) `cmake --build build_py --target pip_install`
+
+Afterwards, you should have a python package called `pypelelmex`.
+
+This package can then be imported into any Python script or notebook as usual. Examples usage is included in the `notebooks` directory.
+
 ## Getting help, contributing
 
 Do you have a question ? Found an issue ? Please use the [GitHub Discussions](https://github.com/AMReX-Combustion/PeleLMeX/discussions) to engage

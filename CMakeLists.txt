@@ -8,9 +8,29 @@ include(CMakePackageConfigHelpers)
 include(PeleUtils)
 include(peleFunctions)
 
-# Output Dircetories
-set_default_build_dirs()
-set_default_install_dirs()
+# if(NOT DEFINED CMAKE_CXX_STANDARD)
+#     set(CMAKE_CXX_STANDARD 17)
+# endif()
+# if(NOT DEFINED CMAKE_CXX_EXTENSIONS)
+#     set(CMAKE_CXX_EXTENSIONS OFF)
+# endif()
+# if(NOT DEFINED CMAKE_CXX_STANDARD_REQUIRED)
+#     set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# endif()
+
+# if(NOT DEFINED CMAKE_CUDA_STANDARD)
+#     set(CMAKE_CUDA_STANDARD 17)
+# endif()
+# if(NOT DEFINED CMAKE_CUDA_EXTENSIONS)
+#     set(CMAKE_CUDA_EXTENSIONS OFF)
+# endif()
+# if(NOT DEFINED CMAKE_CUDA_STANDARD_REQUIRED)
+#     set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+# endif()
+
+# # Output Dircetories
+# set_default_build_dirs()
+# set_default_install_dirs()
 enable_testing()
 include(CTest)
 
@@ -43,7 +63,7 @@ option(PELE_ENABLE_HIP "Enable HIP" OFF)
 option(PELE_ENABLE_SYCL "Enable SyCL" OFF)
 
 # Python options
-option(PELE_PYTHON "Python bindings" ON)
+option(PELE_PYTHON "Python bindings" OFF)
 option(PELE_LIB "Build PeleLMeX as a library" OFF)
 
 if(PELE_PYTHON)
@@ -81,55 +101,87 @@ if(PELE_DIM EQUAL 1)
     message(FATAL_ERROR "${PROJECT_NAME} does not support 1D.")
 endif()
 
+if (PELE_LIB)
+  # Output Dircetories
+  set_default_build_dirs()
+  set_default_install_dirs()
+
+  # set(PeleLMeX_DIMS_VALUES 2 3 RZ)
+  set(PeleLMeX_DIMS_VALUES 2 3)
+  set(PeleLMeX_DIMS 2 3 CACHE STRING "Dimensions to build for")
+  list(REMOVE_DUPLICATES PeleLMeX_DIMS)
+  foreach(D IN LISTS PeleLMeX_DIMS)
+    if(NOT D IN_LIST PeleLMeX_DIMS_VALUES)
+      message(FATAL_ERROR "Invalid dimension specified: ${D}")
+    endif()
+  endforeach()
+
+  list(LENGTH PeleLMeX_DIMS list_len)
+  math(EXPR list_last "${list_len} - 1")
+  list(GET PeleLMeX_DIMS ${list_last} PeleLMeX_DIMS_LAST)
+  pelelmex_set_suffix_dims(PeleLMeX_DIMS_LAST ${PeleLMeX_DIMS_LAST})
+
+  set_default_build_type("Release")
+endif()
+
+
+
 ########################### AMReX #####################################
 message(STATUS "AMReX Configure Section")
 set(AMREX_SUBMOD_LOCATION "${CMAKE_SOURCE_DIR}/Submodules/PelePhysics/Submodules/amrex")
 include(SetAmrexOptions)
-list(APPEND CMAKE_MODULE_PATH "${AMREX_SUBMOD_LOCATION}/Tools/CMake")
-# if (PELE_LIB)
-#   message(STATUS "Compiling local AMReX ...")
-#   message(STATUS "AMReX source path: ${AMREX_SUBMOD_LOCATION}")
-#   if (NOT IS_DIRECTORY ${AMREX_SUBMOD_LOCATION})
-#     message(FATAL_ERROR "Specified directory AMREX_SUBMOD_LOCATION='${AMREX_SUBMOD_LOCATION}' does not exist!")
-#   endif()
-#   set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
-# #   # if("${CMAKE_BUILD_TYPE}" MATCHES "Debug")
-# #       # set(AMReX_ASSERTIONS ON CACHE BOOL "")
-# #       # set(AMReX_FPE ON CACHE BOOL "")
-# #   # else()
-# #       # set(AMReX_ASSERTIONS OFF CACHE BOOL "")
-# #       # set(AMReX_FPE OFF CACHE BOOL "")
-# #   # endif()
+
+
+if (PELE_LIB)
+  option(PeleLMeX_amrex_internal                    "Download & build AMReX" OFF)
+  set(PeleLMeX_COMPUTE "NONE" CACHE STRING "AMReX compute type")
+  set(PeleLMeX_amrex_dim "${PELE_DIM}" CACHE STRING "AMReX dimension")
+
+  set(PeleLMeX_amrex_src ${AMREX_SUBMOD_LOCATION})
+
+
+  message(STATUS "Compiling local AMReX ...")
+  message(STATUS "AMReX source path: ${AMREX_SUBMOD_LOCATION}")
+  if (NOT IS_DIRECTORY ${AMREX_SUBMOD_LOCATION})
+    message(FATAL_ERROR "Specified directory AMREX_SUBMOD_LOCATION='${AMREX_SUBMOD_LOCATION}' does not exist!")
+  endif()
+  set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+  list(APPEND CMAKE_MODULE_PATH "${AMREX_SUBMOD_LOCATION}/Tools/CMake")
+
   set(AMReX_PIC ON CACHE INTERNAL "" FORCE)
   set(AMReX_BUILD_SHARED_LIBS ON CACHE BOOL "Build AMReX shared library" FORCE)
-  set(AMReX_INSTALL ${AMReC_BUILD_SHARED_LIBS} CACHE INTERNAL "Generate Install Targets" FORCE)
-#   add_subdirectory(${AMREX_SUBMOD_LOCATION} _deps/localamrex-build/)
-#   # include(SetAmrexCompileFlags)
+  set(AMReX_INSTALL ${AMReX_BUILD_SHARED_LIBS} CACHE INTERNAL "Generate Install Targets" FORCE)
+  
+  set(PeleLMeX_amrex_dim ${PeleLMeX_DIMS})
+  list(TRANSFORM PeleLMeX_amrex_dim REPLACE RZ 2)
+  list(REMOVE_DUPLICATES PeleLMeX_amrex_dim)
+  set(AMReX_SPACEDIM ${PeleLMeX_amrex_dim} CACHE INTERNAL "")
 
-#   add_library(PeleLMeX::thirdparty::amrex_${PELE_DIM}d INTERFACE IMPORTED)
-#   target_link_libraries(PeleLMeX::thirdparty::amrex_${PELE_DIM}d INTERFACE AMReX::amrex_${PELE_DIM}d)
+  
+  list(APPEND CMAKE_MODULE_PATH "${PeleLMeX_amrex_src}/Tools/CMake")
+  add_subdirectory(${PeleLMeX_amrex_src} _deps/localamrex-build/)
+  include(SetAmrexCompileFlags)
+  message(STATUS "AMReX: Using version '${AMREX_PKG_VERSION}' (${AMREX_GIT_VERSION})")
+  list(APPEND CMAKE_MODULE_PATH "${AMReX_DIR}/AMReXCMakeModules")
 
-#   if(TARGET AMReX::amrex)
-#     get_target_property(imported_target_type AMReX::amrex_${PELE_DIM}d TYPE)
-#     if(NOT imported_target_type STREQUAL "INTERFACE_LIBRARY")
-#       get_target_property(ALL_INCLUDES AMReX::amrex_${PELE_DIM}d INCLUDE_DIRECTORIES)
-#       if(ALL_INCLUDES)
-#         set_target_properties(PeleLMeX::thirdparty::amrex_${PELE_DIM}d PROPERTIES
-#           INTERFACE_INCLUDE_DIRECTORIES ""
-#         )
-#         target_include_directories(PeleLMeX::thirdparty::amrex_${PELE_DIM}d SYSTEM INTERFACE ${ALL_INCLUDES})
-#       endif()
-#     endif()
-#   endif()
 
-#   add_subdirectory(${AMREX_SUBMOD_LOCATION})
-#   include(AMReXBuildInfo)
-# else()
-  # add_subdirectory(${AMREX_SUBMOD_LOCATION})
-  add_subdirectory(${AMREX_SUBMOD_LOCATION} _deps/localamrex-build/)
+  foreach(D IN LISTS PeleLMeX_amrex_dim)
+    #   suppress warnings in AMReX headers (use -isystem instead of -I)
+    pelelmex_make_third_party_includes_system(AMReX::amrex_${D} amrex_${D}d)
+  endforeach()
+  # For <AMReX_buildInfo.H>
+  include(AMReXBuildInfo)
+
+  add_library(PeleLMeX::thirdparty::amrex_${PELE_DIM}d INTERFACE IMPORTED)
+  target_link_libraries(PeleLMeX::thirdparty::amrex_${PELE_DIM}d INTERFACE AMReX::amrex_${PELE_DIM}d)
+
+
+else()
+  list(APPEND CMAKE_MODULE_PATH "${AMREX_SUBMOD_LOCATION}/Tools/CMake")
+  add_subdirectory(${AMREX_SUBMOD_LOCATION})
   include(AMReXBuildInfo)
   include(SetAmrexCompileFlags)
-# endif()
+endif()
 
 
 ########################### AMReX-Hydro ###############################
@@ -137,46 +189,26 @@ message(STATUS "AMReX-Hydro Configure Section")
 set(AMREX_HYDRO_SUBMOD_LOCATION "${CMAKE_SOURCE_DIR}/Submodules/AMReX-Hydro")
 include(SetAmrexHydroOptions)
 
-# if (PELE_LIB)
-#   message(STATUS "Compiling local AMReX-Hydro ...")
-#   message(STATUS "AMReX-Hydro source path: ${AMREX_HYDRO_SUBMOD_LOCATION}")
-#   if(NOT IS_DIRECTORY ${AMREX_HYDRO_SUBMOD_LOCATION})
-#     message(FATAL_ERROR "Specified directory AMREX_HYDRO_SUBMOD_LOCATION='${AMREX_HYDRO_SUBMOD_LOCATION}' does not exist!")
-#   endif()
-#   set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
-#   add_subdirectory(${AMREX_HYDRO_SUBMOD_LOCATION} _deps/localamrexhydro-build/)
+if (PELE_LIB)
+  add_subdirectory(${AMREX_HYDRO_SUBMOD_LOCATION} _deps/localamrexhydro-build/)
+  include(AMReXBuildInfo)
+else()
+  add_subdirectory(${AMREX_HYDRO_SUBMOD_LOCATION})
+endif()
 
-#   add_library(PeleLMeX::thirdparty::amrex_hydro_${PELE_DIM}d INTERFACE IMPORTED)
-#   target_link_libraries(PeleLMeX::thirdparty::amrex_hydro_${PELE_DIM}d INTERFACE AMReX::amrex_hydro_${PELE_DIM}d)
-# else()
-# add_subdirectory(${AMREX_HYDRO_SUBMOD_LOCATION})
-add_subdirectory(${AMREX_HYDRO_SUBMOD_LOCATION} _deps/localamrexhydro-build/)
-include(AMReXBuildInfo)
-
-# endif()
 
 # ########################### SUNDIALS ##################################
 message(STATUS "Sundials Configure Section")
 set(SUNDIALS_SUBMOD_LOCATION "${CMAKE_SOURCE_DIR}/Submodules/PelePhysics/Submodules/sundials")
 include(SetSundialsOptions)
-#BUILD_TESTING is an old CMake keyword so don't clear it in sundials configure
-# if (PELE_LIB)
-#   message(STATUS "Compiling local SUNDIALS ...")
-#   message(STATUS "SUNDIALS source path: ${SUNDIALS_SUBMOD_LOCATION}")
-#   if(NOT IS_DIRECTORY ${SUNDIALS_SUBMOD_LOCATION})
-#     message(FATAL_ERROR "Specified directory SUNDIALS_SUBMOD_LOCATION='${SUNDIALS_SUBMOD_LOCATION}' does not exist!")
-#   endif()
-#   set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
-#   add_subdirectory(${SUNDIALS_SUBMOD_LOCATION} _deps/localsundials-build/)
 
-#   add_library(PeleLMeX::thirdparty::sundials_${PELE_DIM}d INTERFACE IMPORTED)
-#   target_link_libraries(PeleLMeX::thirdparty::sundials_${PELE_DIM}d INTERFACE sundials::sundials_${PELE_DIM}d)
-# else()
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
-# add_subdirectory(${SUNDIALS_SUBMOD_LOCATION})
-add_subdirectory(${SUNDIALS_SUBMOD_LOCATION} _deps/localsundials-build/)
-include(AMReXBuildInfo)
-# endif()
+if (PELE_LIB)
+  add_subdirectory(${SUNDIALS_SUBMOD_LOCATION} _deps/localsundials-build/)
+  include(AMReXBuildInfo)
+else()
+  add_subdirectory(${SUNDIALS_SUBMOD_LOCATION})
+endif()
 
 
 if (PELE_PYTHON)
@@ -214,84 +246,59 @@ init_code_checks()
 
 include(SetRpath)
 
-enable_testing()
-include(CTest)
+# enable_testing()
+# include(CTest)
 add_subdirectory(Exec)
 add_subdirectory(Tests)
 add_subdirectory(${CMAKE_SOURCE_DIR}/Submodules/PelePhysics/Testing/Exec/Radiation)
 
 
+
 # Targets for installation
 if (PELE_LIB)
-  # set(SD ${PELE_DIM}d)
+
+  option(PeleLMeX_amrex_internal                    "Download & build AMReX" OFF)
+  set(PeleLMeX_COMPUTE "NONE" CACHE STRING "AMReX compute type")
+  set(PeleLMeX_amrex_dim "${PELE_DIM}" CACHE STRING "AMReX dimension")
+
+  set(PeleLMeX_amrex_src ${AMREX_SUBMOD_LOCATION})
+
+  set(PeleLMeX_amrex_dim ${PeleLMeX_DIMS})
+  list(TRANSFORM PeleLMeX_amrex_dim REPLACE RZ 2)
+  list(REMOVE_DUPLICATES PeleLMeX_amrex_dim)
+  set(AMReX_SPACEDIM ${PeleLMeX_amrex_dim} CACHE INTERNAL "")
+
+  set(PELE_PHYSICS_EOS_MODEL Fuego)
+  set(PELE_PHYSICS_CHEMISTRY_MODEL air)
+  set(PELE_PHYSICS_TRANSPORT_MODEL Constant)
+  set(PELE_PHYSICS_ENABLE_SPRAY OFF)
+  set(PELE_PHYSICS_SPRAY_FUEL_NUM 0)
+  set(PELE_PHYSICS_ENABLE_SOOT OFF)
+  set(PELE_PHYSICS_ENABLE_RADIATION OFF)
 
   include(BuildExeAndLib)
 
+endif()
 
-  # add_library(PeleLMeX::thirdparty::amrex_${PELE_DIM} INTERFACE IMPORTED)
-  # target_link_libraries(PeleLMeX::thirdparty::amrex_${PELE_DIM} INTERFACE AMReX::amrex_${PELE_DIM})
+if (PELE_PYTHON)
+  find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
 
-  # if(TARGET AMReX::amrex_${PELE_DIM})
-  #   get_target_property(imported_target_type AMReX::amrex_${PELE_DIM} TYPE)
-  #   if(NOT imported_target_type STREQUAL "INTERFACE_LIBRARY")
-  #     get_target_property(ALL_INCLUDES AMReX::amrex_${PELE_DIM} INCLUDE_DIRECTORIES)
-  #     if(ALL_INCLUDES)
-  #       set_target_properties(PeleLMeX::thirdparty::amrex_${PELE_DIM} PROPERTIES
-  #         INTERFACE_INCLUDE_DIRECTORIES ""
-  #       )
-  #       target_include_directories(PeleLMeX::thirdparty::amrex_${PELE_DIM} SYSTEM INTERFACE ${ALL_INCLUDES})
-  #     endif()
-  #   endif()
-  # endif()
+  set_default_install_dirs_python()
+
+  # pybind11
+  include(${PeleLMeX_SOURCE_DIR}/cmake/dependencies/pybind11.cmake)
+
+
+  # pyAMReX
+  include(${PeleLMeX_SOURCE_DIR}/cmake/dependencies/pyAMReX.cmake)
 
 
 endif()
 
-  # include(GenerateExportHeader)
-  # set(_ALL_TARGETS)
-
-  # add_library(amrex_${SD})
-  # set(_BUILDINFO_SRC amrex_${SD})
-  # list(APPEND _ALL_TARGETS amrex_${SD})
-  # add_library(PeleLMeX::amrex_${SD} ALIAS amrex_${SD})
-
-  # add_library(lib_${SD})
-  # add_library(PeleLMeX::lib_${SD} ALIAS lib_${SD})
-
-  # target_link_libraries(lib_${SD}
-  #   PUBLIC
-  #     AMReX::amrex_${SD}
-  #     # Might need to set these and then find a way to link them later...
-  #     # AMReX::amrex_hydro_${SD}
-  #     # sundials::sundials_${SD}
-  # )
-
-  # set(_BUILDINFO_SRC lib_${SD})
-  # list(APPEND _ALL_TARGETS lib_${SD})
-
-  # set_target_properties(lib_${SD} PROPERTIES
-  #   POSITION_INDEPENDENT_CODE ON
-  #   WINDOWS_EXPORT_ALL_SYMBOLS ON
-  # )
-
-  # set_target_properties(amrex_${SD} PROPERTIES
-  #   WINDOWS_EXPORT_ALL_SYMBOLS ON
-  # )
-  # target_include_directories(amrex_${SD}
-  #   PUBLIC
-  #     $<BUILD_INTERFACE:${PeleLMeX_SOURCE_DIR}/Source>
-  #     $<BUILD_INTERFACE:${PeleLMeX_BINARY_DIR}/Source>
-  # )
-
-  # target_include_directories(lib_${SD}
-  #   PUBLIC
-  #     $<BUILD_INTERFACE:${PeleLMeX_SOURCE_DIR}/Source>
-  #     $<BUILD_INTERFACE:${PeleLMeX_BINARY_DIR}/Source>
-  # )
 
 if (PELE_PYTHON)
 
-  # set(SD ${PELE_DIM}d)
+  set(SD ${PELE_DIM}d)
   target_include_directories(${pele_exe_name}
     PRIVATE
       ${PeleLMeX_SOURCE_DIR}/Source
@@ -299,8 +306,13 @@ if (PELE_PYTHON)
   )
   
 
-  add_library(pyPeleLMeX MODULE Source/Python/pyPeleLMeX.cpp)
-  # add_library(PeleLMeX::pyPeleLMeX ALIAS pyPeleLMeX)
+  add_library(pyPeleLMeX MODULE 
+    Source/Python/pyPeleLMeX.cpp
+    Source/pelelmex_prob.H
+  )
+
+
+  add_library(PeleLMeX::pyPeleLMeX ALIAS pyPeleLMeX)
   target_link_libraries(pyPeleLMeX PUBLIC ${pele_exe_name})
   set(_BUILDINFO_SRC pyPeleLMeX)
   list(APPEND _ALL_TARGETS pyPeleLMeX)
@@ -322,57 +334,55 @@ if (PELE_PYTHON)
     PDB_OUTPUT_DIRECTORY ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/pypelelmex
     COMPILE_PDB_OUTPUT_DIRECTORY ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/pypelelmex
   )
-  # get_property(isMultiConfig GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
-  # if(isMultiConfig)
-  #     foreach(CFG IN LISTS CMAKE_CONFIGURATION_TYPES)
-  #         string(TOUPPER "${CFG}" CFG_UPPER)
-  #         set_target_properties(pyPeleLMeX_${SD} PROPERTIES
-  #             # build output directories - mainly set to run tests from CMake & IDEs
-  #             # note: same as above, but for Multi-Config generators
-  #             ARCHIVE_OUTPUT_DIRECTORY_${CFG_UPPER} ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/pypelelmex
-  #             LIBRARY_OUTPUT_DIRECTORY_${CFG_UPPER} ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/pypelelmex
-  #             RUNTIME_OUTPUT_DIRECTORY_${CFG_UPPER} ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/pypelelmex
-  #             PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/pypelelmex
-  #             COMPILE_PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/pywpypelelmexarpx
-  #         )
-  #     endforeach()
-  # endif()
-  # if(EMSCRIPTEN)
-  #     set_target_properties(pyPeleLMeX_${SD} PROPERTIES
-  #         PREFIX "")
-  # else()
-  pybind11_extension(pyPeleLMeX)
-  # endif()
+  get_property(isMultiConfig GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+  if(isMultiConfig)
+      foreach(CFG IN LISTS CMAKE_CONFIGURATION_TYPES)
+          string(TOUPPER "${CFG}" CFG_UPPER)
+          set_target_properties(pyPeleLMeX PROPERTIES
+              # build output directories - mainly set to run tests from CMake & IDEs
+              # note: same as above, but for Multi-Config generators
+              ARCHIVE_OUTPUT_DIRECTORY_${CFG_UPPER} ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/pypelelmex
+              LIBRARY_OUTPUT_DIRECTORY_${CFG_UPPER} ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/pypelelmex
+              RUNTIME_OUTPUT_DIRECTORY_${CFG_UPPER} ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/pypelelmex
+              PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/pypelelmex
+              COMPILE_PDB_OUTPUT_DIRECTORY_${CFG_UPPER} ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/pypelelmex
+          )
+      endforeach()
+  endif()
+  if(EMSCRIPTEN)
+      set_target_properties(pyPeleLMeX PROPERTIES
+          PREFIX "")
+  else()
+    pybind11_extension(pyPeleLMeX)
+  endif()
   if(NOT MSVC AND NOT ${CMAKE_BUILD_TYPE} MATCHES Debug|RelWithDebInfo)
       pybind11_strip(pyPeleLMeX)
   endif()
 
   generate_buildinfo(${_BUILDINFO_SRC} "${PeleLMeX_SOURCE_DIR}")
-  # target_link_libraries(lib_${SD} PRIVATE buildInfo::${_BUILDINFO_SRC})
+  target_link_libraries(amrex_${SD} PRIVATE buildInfo::${_BUILDINFO_SRC})
   target_link_libraries(pyPeleLMeX PRIVATE buildInfo::${_BUILDINFO_SRC})
   unset(_BUILDINFO_SRC)
 
-  # target_sources(lib_${SD} PRIVATE Source/PeleLMeX.cpp)
+  target_sources(${pele_exe_name} PRIVATE Source/PeleLMeX.cpp)
 
 
-  # # # This might only be needed for globals (from warpx implementation)
+  # # # This might only be needed for globals (from warpx implementation...)
   # generate_export_header(amrex_${SD}
   #   BASE_NAME AMReX
   #   EXPORT_FILE_NAME Source/AMReX_Export.H
   # )
 
-  # generate_export_header(lib_${SD}
+  # generate_export_header(${pele_exe_name}
   #   BASE_NAME PeleLMeX
   #   EXPORT_FILE_NAME Source/PeleLMeX_Export.H
   # )
 
   # target_compile_definitions(amrex_${SD} PRIVATE amrex_${SD}_EXPORTS)
-  # target_compile_definitions(lib_${SD} PRIVATE lib_${SD}_EXPORTS)
   target_compile_definitions(${pele_exe_name} PRIVATE PELELMEX_EXPORTS)
   target_compile_definitions(pyPeleLMeX PRIVATE PYPELELMEX_EXPORTS)
   if(NOT BUILD_SHARED_LIBS)
-    # target_compile_definitions(amrex_${SD} PRIVATE AMREX_STATIC_DEFINE)
-    # target_compile_definitions(lib_${SD} PRIVATE PELELMEX_STATIC_DEFINE)
+    target_compile_definitions(amrex_${SD} PRIVATE AMREX_STATIC_DEFINE)
     target_compile_definitions(${pele_exe_name} PRIVATE PELELMEX_STATIC_DEFINE)
     target_compile_definitions(pyPeleLMeX PRIVATE PYPELELMEX_STATIC_DEFINE)
   endif()
@@ -388,13 +398,13 @@ if (PELE_PYTHON)
   add_subdirectory(Source/Python)
 
   # link dependencies
-  # target_link_libraries(amrex_${SD} PUBLIC PeleLMeX::thirdparty::amrex_${SD})
-  # target_link_libraries(${pele_physics_lib_name} PUBLIC PeleLMeX::thirdparty::${pele_physics_lib_name})
   include(AMReXBuildInfo)
   generate_buildinfo(${pele_exe_name} ${CMAKE_SOURCE_DIR})
   # target_link_libraries(${pele_exe_name} PUBLIC ${pele_physics_lib_name} AMReX-Hydro::amrex_hydro_api AMReX::amrex)
   target_link_libraries(${pele_exe_name} PUBLIC ${pele_physics_lib_name})
-  target_link_libraries(pyPeleLMeX PRIVATE pybind11::module)
+  target_link_libraries(${pele_exe_name} PUBLIC pybind11::module)
+  target_link_libraries(pyPeleLMeX PUBLIC pybind11::module)
+  target_link_libraries(pyPeleLMeX PUBLIC PeleLMeX::thirdparty::amrex_3d)
 
   foreach(pelelmex_tgt IN LISTS _ALL_TARGETS)
     target_compile_features(${pelelmex_tgt} PUBLIC cxx_std_17)
@@ -407,45 +417,47 @@ if (PELE_PYTHON)
   set_pelelmex_binary_name(${PELE_DIM})
 
   # Defines
-  # target_compile_definitions(amrex_${SD} PUBLIC PELELMEX_DIM_${PELE_DIM}D)
-  # target_compile_definitions(pyPeleLMeX_${SD} PRIVATE PYPELELMEX_VERSION_INFO=${PELELMEX_VERSION_INFO})
-  # target_compile_definitions(${pele_exe_name} PRIVATE PELELMEX_DIM_${PELE_DIM}D)
-  # target_compile_definitions(${pele_exe_name} PRIVATE PELELMEX_DIM_${PELE_DIM}D)
-  # target_compile_definitions(pyPeleLMeX PRIVATE PYPELELMEX_VERSION_INFO=${PELELMEX_VERSION_INFO})
+  foreach(D IN LISTS PeleLMeX_DIMS)
+    target_compile_definitions(amrex_${D}d PUBLIC PELELMEX_DIM_${PELE_DIM}D)
+    target_compile_definitions(pyPeleLMeX PRIVATE PYPELELMEX_VERSION_INFO=${PELELMEX_VERSION_INFO})
+    target_compile_definitions(${pele_exe_name} PRIVATE PELELMEX_DIM_${PELE_DIM}D)
+    target_compile_definitions(${pele_exe_name} PRIVATE PELELMEX_DIM_${PELE_DIM}D)
+    target_compile_definitions(pyPeleLMeX PRIVATE PYPELELMEX_VERSION_INFO=${PELELMEX_VERSION_INFO})
+  endforeach()
 
 
   # Installs
   set(PeleLMeX_INSTALL_TARGET_NAMES)
-  list(APPEND PeleLMeX_INSTALL_TARGET_NAMES amrex_${PELE_DIM}d)
-  # list(APPEND PeleLMeX_INSTALL_TARGET_NAMES lib_${SD}) 
-  # list(APPEND PeleLMeX_INSTALL_TARGET_NAMES AMReX::amrex)
-  # list(APPEND PeleLMeX_INSTALL_TARGET_NAMES AMReX-Hydro::amrex_hydro_api)
-  list(APPEND PeleLMeX_INSTALL_TARGET_NAMES ${pele_physics_lib_name})
-  list(APPEND PeleLMeX_INSTALL_TARGET_NAMES ${pele_exe_name})
-  list(APPEND PeleLMeX_INSTALL_TARGET_NAMES pyPeleLMeX)
+  foreach(D IN LISTS PeleLMeX_DIMS)
+    list(APPEND PeleLMeX_INSTALL_TARGET_NAMES amrex_${D}d)
+    list(APPEND PeleLMeX_INSTALL_TARGET_NAMES ${pele_physics_lib_name})
+    list(APPEND PeleLMeX_INSTALL_TARGET_NAMES ${pele_exe_name})
+    list(APPEND PeleLMeX_INSTALL_TARGET_NAMES pyPeleLMeX)
 
-  install(TARGETS ${PeleLMeX_INSTALL_TARGET_NAMES}
-    # EXPORT ${PROJECT_NAME}Targets
-    EXPORT PeleLMeXTargets
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-  )
+    install(TARGETS ${PeleLMeX_INSTALL_TARGET_NAMES}
+      EXPORT ${PROJECT_NAME}Targets
+      # EXPORT PeleLMeXTargets
+      LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+      INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+      PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    )
 
-  # simplified library alias
-  if(IS_ABSOLUTE ${CMAKE_INSTALL_LIBDIR})
-      set(ABS_INSTALL_LIB_DIR "${CMAKE_INSTALL_LIBDIR}")
-  else()
-      set(ABS_INSTALL_LIB_DIR "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
-  endif()
-  # escape spaces for generated cmake_install.cmake file
-  file(TO_CMAKE_PATH "${ABS_INSTALL_LIB_DIR}" ABS_INSTALL_LIB_DIR)
+    # simplified library alias
+    if(IS_ABSOLUTE ${CMAKE_INSTALL_LIBDIR})
+        set(ABS_INSTALL_LIB_DIR "${CMAKE_INSTALL_LIBDIR}")
+    else()
+        set(ABS_INSTALL_LIB_DIR "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+    endif()
+    # escape spaces for generated cmake_install.cmake file
+    file(TO_CMAKE_PATH "${ABS_INSTALL_LIB_DIR}" ABS_INSTALL_LIB_DIR)
 
-  install(CODE "file(CREATE_LINK
-      $<TARGET_FILE_NAME:${pele_exe_name}>
-      \"${ABS_INSTALL_LIB_DIR}/libpelelmex<TARGET_FILE_SUFFIX:${pele_exe_name}>\"
-      COPY_ON_ERROR SYMBOLIC)")
+    install(CODE "file(CREATE_LINK
+        $<TARGET_FILE_NAME:${pele_exe_name}>
+        \"${ABS_INSTALL_LIB_DIR}/libpelelmex<TARGET_FILE_SUFFIX:${pele_exe_name}>\"
+        COPY_ON_ERROR SYMBOLIC)")
+  endforeach()
 
 
   # pip helpers for pypelelmex package
@@ -492,7 +504,9 @@ if (PELE_PYTHON)
 
     # target
     set(_EXTRA_INSTALL_DEPENDS)
-    set(_EXTRA_INSTALL_DEPENDS pyamrex_pip_install)
+    if(PeleLMeX_pyamrex_internal OR PeleLMeX_pyamrex_src)
+        set(_EXTRA_INSTALL_DEPENDS pyamrex_pip_install)
+    endif()
 
     # We force-install because in development, it is likely that the version of
     # the package does not change, but the code did change. We need --no-deps,
@@ -503,8 +517,9 @@ if (PELE_PYTHON)
       WORKING_DIRECTORY
           ${PeleLMeX_BINARY_DIR}
       DEPENDS
+          # pyPeleLMeX_${PeleLMeX_DIMS_LAST}
           pyPeleLMeX
-          ${PeleLMex_CUSTOM_TARGET_PREFIX}pip_wheel
+          ${PeleLMeX_CUSTOM_TARGET_PREFIX}pip_wheel
           ${PeleLMeX_CUSTOM_TARGET_PREFIX}pip_install_requirements
           ${_EXTRA_INSTALL_DEPENDS}
     )
@@ -516,9 +531,12 @@ if (PELE_PYTHON)
       WORKING_DIRECTORY
           ${PeleLMeX_BINARY_DIR}
       DEPENDS
+          # pyPeleLMeX_${PeleLMeX_DIMS_LAST}
           pyPeleLMeX
           ${PeleLMeX_CUSTOM_TARGET_PREFIX}pip_wheel
     )
+
+
   endif()
 
 endif()

@@ -141,3 +141,47 @@ function(set_pelelmex_binary_name D)
 endfunction()
 
 
+# Take an <imported_target> and expose it as INTERFACE target with
+# PeleLMeX::thirdparty::<propagated_name> naming and SYSTEM includes.
+#
+function(pelelmex_make_third_party_includes_system imported_target propagated_name)
+    add_library(PeleLMeX::${propagated_name} INTERFACE IMPORTED)
+    target_link_libraries(PeleLMeX::${propagated_name} INTERFACE ${imported_target})
+
+    if(TARGET ${imported_target})
+        get_target_property(imported_target_type ${imported_target} TYPE)
+        if(NOT imported_target_type STREQUAL INTERFACE_LIBRARY)
+            get_target_property(ALL_INCLUDES ${imported_target} INCLUDE_DIRECTORIES)
+            if(ALL_INCLUDES)
+                set_target_properties(PeleLMeX::${propagated_name} PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "")
+                target_include_directories(PeleLMeX::${propagated_name} SYSTEM INTERFACE ${ALL_INCLUDES})
+            endif()
+        endif()
+    endif()
+endfunction()
+
+# macro(pelelmex_set_suffix_dims suffix dim)
+#     if("${dim}" STREQUAL "RZ")
+#         set(${suffix} rz)
+#     else()
+#         set(${suffix} ${dim}d)
+#     endif()
+# endmacro()
+
+
+macro(set_default_build_type default_build_type)
+    if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
+        set(CMAKE_CONFIGURATION_TYPES "Release;Debug;MinSizeRel;RelWithDebInfo")
+        if(NOT CMAKE_BUILD_TYPE)
+            set(CMAKE_BUILD_TYPE ${default_build_type}
+                CACHE STRING
+                "Choose the build type, e.g. Release, Debug, or RelWithDebInfo." FORCE)
+            set_property(CACHE CMAKE_BUILD_TYPE
+                PROPERTY STRINGS ${CMAKE_CONFIGURATION_TYPES})
+        endif()
+        if(NOT CMAKE_BUILD_TYPE IN_LIST CMAKE_CONFIGURATION_TYPES)
+            message(WARNING "CMAKE_BUILD_TYPE '${CMAKE_BUILD_TYPE}' is not one of "
+                    "${CMAKE_CONFIGURATION_TYPES}. Is this a typo?")
+        endif()
+    endif()
+endmacro()

@@ -1,4 +1,4 @@
-import atexit
+# import atexit
 
 
 class LibPeleLMeX:
@@ -6,7 +6,7 @@ class LibPeleLMeX:
     def __init__(self):
         self.initialized = False
 
-        atexit.register(self.finalize)
+        # atexit.register(self.finalize)
 
     def __getattr__(self, attribute):
         if attribute == "libpelelmex":
@@ -32,22 +32,22 @@ class LibPeleLMeX:
         except ImportError:
             raise ImportError("Could not import libpelelmex")
 
-    def initialize(self):
-        self.amr.initialize([])
+    # def initialize(self):
+    #     self.amr.initialize([])
 
-        self.initialized = True
+    #     self.initialized = True
 
-    def finalize(self):
-        if self.initialized:
-            self.amr.finalize()
-            self.initialized = False
+    # def finalize(self):
+    #     if self.initialized:
+    #         self.amr.finalize()
+    #         self.initialized = False
 
-    def test_read(self):
-        self.load_library()
-        self.initialize()
-        self.libpelelmex.read_params()
-        # self.libpelelmex.setup()
-        self.finalize()
+    # def test_read(self):
+    #     self.load_library()
+    #     self.initialize()
+    #     self.libpelelmex.read_params()
+    #     # self.libpelelmex.setup()
+    #     self.finalize()
 
 
 libpelelmex = LibPeleLMeX()

@@ -19,17 +19,17 @@ function(build_pele_exe pele_exe_name pele_physics_lib_name)
   endif()
 
   if(PELE_LIB)
-    target_sources(${pele_exe_name}
-      # PRIVATE
-      PUBLIC
-      # SHARED
-        Source/pelelmex_prob_parm.H
-        Source/pelelmex_prob.H
-        Source/pelelmex_prob.cpp
-        Source/main.cpp
-        Source/PeleLMeX.H
-        Source/PeleLMeX.cpp
-    )
+  target_sources(${pele_exe_name}
+  PUBLIC
+
+      Source/pelelmex_prob_parm.H
+      Source/pelelmex_prob.H
+      Source/pelelmex_prob.cpp
+      Source/PeleLMeX.H
+      Source/PeleLMeX.cpp
+      Source/Python/pyPeleLMeX.H
+
+)
   else()  
     target_sources(${pele_exe_name}
       PRIVATE

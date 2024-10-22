@@ -12,11 +12,6 @@ function(find_pyamrex)
     endif()
 
     # transitive control for AMReX & pybind11 superbuild
-    #   note: if we do superbuilds, we want the same AMReX commit for
-    #           AMReX->ABLASTR->PeleLMeX and
-    #           AMReX->pyAMReX->pyPeleLMeX
-    #   note: this is performed after we did the transitive logic control in
-    #         ABLASTR.cmake
     set(pyAMReX_amrex_internal ${PeleLMeX_amrex_internal} CACHE BOOL
         "Download & build AMReX" FORCE)
     set(pyAMReX_pybind11_internal ${PeleLMeX_pybind11_internal} CACHE BOOL
@@ -45,6 +40,8 @@ function(find_pyamrex)
             FetchContent_Declare(fetchedpyamrex
                 GIT_REPOSITORY ${PeleLMeX_pyamrex_repo}
                 GIT_TAG        ${PeleLMeX_pyamrex_branch}
+                # GIT_REPOSITORY   "https://github.com/ax3l/pyamrex.git"
+                # GIT_TAG        "fix-setup-clash-tmp-build"
                 BUILD_IN_SOURCE 0
             )
             FetchContent_GetProperties(fetchedpyamrex)

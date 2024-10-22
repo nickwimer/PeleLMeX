@@ -9,18 +9,21 @@ from setuptools import setup
 PYPELELMEX_LIB_DIR = os.environ.get("PYPELELMEX_LIB_DIR")
 
 
+allowed_dims = ["2d", "3d"]
+
 # CMake and Package Managers
 package_data = {"pypelelmex": []}
 lib_dir = PYPELELMEX_LIB_DIR
 my_path = os.path.dirname(os.path.realpath(__file__))
-lib_name = "libpelelmex.so"
-lib_path = os.path.join(lib_dir, lib_name)
-link_name = os.path.join(my_path, "pypelelmex", lib_name)
-if os.path.isfile(link_name):
-    os.remove(link_name)
-if os.path.isfile(lib_path) and os.access(lib_path, os.R_OK):
-    os.symlink(lib_path, link_name)
-    package_data["pypelelmex"].append(lib_name)
+for dim in allowed_dims:
+    lib_name = "libpelelmex.so"
+    lib_path = os.path.join(lib_dir, lib_name)
+    link_name = os.path.join(my_path, "pypelelmex", lib_name)
+    if os.path.isfile(link_name):
+        os.remove(link_name)
+    if os.path.isfile(lib_path) and os.access(lib_path, os.R_OK):
+        os.symlink(lib_path, link_name)
+        package_data["pypelelmex"].append(lib_name)
 
 
 setup(
