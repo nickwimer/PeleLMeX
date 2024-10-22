@@ -124,6 +124,27 @@ Afterwards, you should have a python package called `pypelelmex`.
 
 This package can then be imported into any Python script or notebook as usual. Examples usage is included in the `notebooks` directory.
 
+Temporarily, the user needs to add the following type function to the specified `mechanism.H` file:
+
+```cpp
+  // Function to get species ID by name (demo for air)
+  inline int
+  get_spec_id_by_name(const std::string& species_name)
+  {
+    static const std::unordered_map<std::string, int> species_index_map = {
+      {"O2", O2_ID}, {"N2", N2_ID},
+      // Add more species here as needed
+    };
+  
+    auto it = species_index_map.find(species_name);
+    if (it != species_index_map.end()) {
+      return it->second;
+    } else {
+      return -1; 
+    }
+  }
+```
+
 ## Getting help, contributing
 
 Do you have a question ? Found an issue ? Please use the [GitHub Discussions](https://github.com/AMReX-Combustion/PeleLMeX/discussions) to engage
