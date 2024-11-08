@@ -24,6 +24,7 @@
 #include <PMFData.H>
 #include <turbinflow.H>
 #include <ReactorBase.H>
+#include <Utilities.H>
 
 // AMReX-Hydro lib
 #include <hydro_MacProjector.H>
