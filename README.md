@@ -117,8 +117,9 @@ PeleLMeX can now be built as a Python package using a cmake superbuild. It is re
 To install, follow the following steps:
 
 1) `cd PeleLMeX/`
-2) `cmake -S . build_py -DPELE_PYTHON=ON -DPELE_LIB=ON`
-3) `cmake --build build_py --target pip_install`
+2) `pip install cmake==3.30.0`
+3) `cmake -S . build_py -DPELE_PYTHON=ON -DPELE_LIB=ON`
+4) `cmake --build build_py --target pip_install`
 
 Afterwards, you should have a python package called `pypelelmex`.
 

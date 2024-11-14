@@ -28,6 +28,9 @@ include(peleFunctions)
 #     set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 # endif()
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+
 # # Output Dircetories
 # set_default_build_dirs()
 # set_default_install_dirs()
@@ -217,11 +220,11 @@ if (PELE_PYTHON)
   set_default_install_dirs_python()
 
   # pybind11
-  include(${PeleLMeX_SOURCE_DIR}/cmake/dependencies/pybind11.cmake)
+  include(${PeleLMeX_SOURCE_DIR}/CMake/dependencies/pybind11.cmake)
 
 
   # pyAMReX
-  include(${PeleLMeX_SOURCE_DIR}/cmake/dependencies/pyAMReX.cmake)
+  include(${PeleLMeX_SOURCE_DIR}/CMake/dependencies/pyAMReX.cmake)
 
 
 endif()
@@ -286,11 +289,11 @@ if (PELE_PYTHON)
   set_default_install_dirs_python()
 
   # pybind11
-  include(${PeleLMeX_SOURCE_DIR}/cmake/dependencies/pybind11.cmake)
+  include(${PeleLMeX_SOURCE_DIR}/CMake/dependencies/pybind11.cmake)
 
 
   # pyAMReX
-  include(${PeleLMeX_SOURCE_DIR}/cmake/dependencies/pyAMReX.cmake)
+  include(${PeleLMeX_SOURCE_DIR}/CMake/dependencies/pyAMReX.cmake)
 
 
 endif()
