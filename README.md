@@ -123,6 +123,12 @@ To install, follow the following steps:
 
 Afterwards, you should have a python package called `pypelelmex`.
 
+Below are optional flags commonly used:
+- `-DPELE_ENABLE_MPI=ON`: For MPI
+- `-DPELE_ENABLE_OPENMP=ON`: For OpenMP
+- `-PELE_ENABLE_CUDA=ON`: For CUDA
+- `-PELE_ENABLE_HIP=ON`: For HIP
+
 This package can then be imported into any Python script or notebook as usual. Examples usage is included in the `notebooks` directory.
 
 Temporarily, the user needs to add the following type function to the specified `mechanism.H` file:
