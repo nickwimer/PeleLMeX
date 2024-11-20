@@ -126,8 +126,9 @@ Afterwards, you should have a python package called `pypelelmex`.
 Below are optional flags commonly used:
 - `-DPELE_ENABLE_MPI=ON`: For MPI
 - `-DPELE_ENABLE_OPENMP=ON`: For OpenMP
-- `-PELE_ENABLE_CUDA=ON`: For CUDA
-- `-PELE_ENABLE_HIP=ON`: For HIP
+- `-DPELE_ENABLE_CUDA=ON`: For CUDA
+- `-DPELE_ENABLE_HIP=ON`: For HIP
+- `-DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-O3 -march=native" -DCMAKE_C_FLAGS="-O3 -march=native"`
 
 This package can then be imported into any Python script or notebook as usual. Examples usage is included in the `notebooks` directory.
 
@@ -151,6 +152,38 @@ Temporarily, the user needs to add the following type function to the specified 
     }
   }
 ```
+
+For some HPC systems you may also need to disable MPICH and do a `module load` for openmpi
+
+NOTE: might need to install mpi4py from source after `module load openmpi`...testing now...
+
+- Follow instructions to compile from scratch using github... more coming soon...
+
+```bash
+export MPICC=cc  # Set MPICC to Cray compiler wrapper
+python setup.py clean
+python setup.py build --mpicc=$MPICC
+python setup.py install --prefix=/home/nwimer/mpi4py_install
+```
+
+```bash
+export OMPI_MCA_mtl=^ofi
+export OMPI_MCA_pml=^ucx
+export OMPI_MCA_btl=^ofi
+
+```
+
+If you are running on Kestrel GPUs:
+
+```bash
+module purge;
+module load PrgEnv-gnu/8.5.0;
+module load cuda/12.3;
+module load craype-x86-milan;
+make realclean; make -j COMP=gnu USE_CUDA=TRUE
+```
+
+
 
 ## Getting help, contributing
 

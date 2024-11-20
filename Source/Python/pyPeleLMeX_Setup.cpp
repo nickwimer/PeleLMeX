@@ -2,6 +2,7 @@
 #include <AMReX_ParmParse.H>
 #include <PeleLMeX.H>
 #include <AMReX_Parser.H>
+#include <AMReX_ParallelDescriptor.H>
 
 #include <pelelmex_prob.H>
 
@@ -12,31 +13,33 @@ static std::unique_ptr<PeleLM> pelelm_instance = nullptr;
 void
 initAmrex(const std::string& input_file)
 {
-  if (!amrex_initialized) {
-    int argc = 0;
-    char** argv = nullptr;
-
-    // Constructing arguments to mimic command line args
-    std::vector<std::string> args;
-    args.push_back("amrex"); // Program name (typically argv[0])
-
-    if (!input_file.empty()) {
-      args.push_back(input_file); // The input file argument
-    }
-
-    argc = args.size();
-    std::vector<char*> cstr_args(argc);
-    for (size_t i = 0; i < args.size(); ++i) {
-      cstr_args[i] = &args[i][0];
-    }
-    argv = cstr_args.data();
-
-    // Initialize AMReX with the constructed arguments
-    amrex::Initialize(argc, argv);
-    amrex_initialized = true;
-  } else {
-    throw std::runtime_error("AMReX is already initialized.");
+  // Allows for multiple calls to initialize AMReX
+  if (amrex_initialized) {
+    amrex::ParmParse::Finalize();
+    amrex_initialized = false;
   }
+
+  int argc = 0;
+  char** argv = nullptr;
+
+  // Constructing arguments to mimic command line args
+  std::vector<std::string> args;
+  args.push_back("amrex"); // Program name (typically argv[0])
+
+  if (!input_file.empty()) {
+    args.push_back(input_file); // The input file argument
+  }
+
+  argc = args.size();
+  std::vector<char*> cstr_args(argc);
+  for (size_t i = 0; i < args.size(); ++i) {
+    cstr_args[i] = &args[i][0];
+  }
+  argv = cstr_args.data();
+
+  // Initialize AMReX with the constructed arguments
+  amrex::Initialize(argc, argv);
+  amrex_initialized = true;
 }
 
 // Function to finalize AMReX

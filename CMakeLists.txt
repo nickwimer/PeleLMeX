@@ -253,8 +253,9 @@ include(SetRpath)
 # include(CTest)
 add_subdirectory(Exec)
 add_subdirectory(Tests)
-add_subdirectory(${CMAKE_SOURCE_DIR}/Submodules/PelePhysics/Testing/Exec/Radiation)
-
+if (PELE_PHYSICS_ENABLE_RADIATION)
+  add_subdirectory(${CMAKE_SOURCE_DIR}/Submodules/PelePhysics/Testing/Exec/Radiation)
+endif()
 
 
 # Targets for installation
