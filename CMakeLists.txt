@@ -276,7 +276,6 @@ if (PELE_PHYSICS_ENABLE_RADIATION)
 endif()
 
 
-
 # Targets for installation
 if (PELE_LIB)
 
