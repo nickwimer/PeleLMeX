@@ -322,6 +322,7 @@ public:
    * parameters.
    */
   void checkRunParams();
+  void checkSetupParams();
 
   //-----------------------------------------------------------------------------
   // REGRID / LOAD BALANCE
