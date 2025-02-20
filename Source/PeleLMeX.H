@@ -121,6 +121,7 @@ public:
 
   // ReadProblemParameters
   void readProbParm();
+  void freeProbParm();
 
   // Build runtime parser payload (host-side parse, device-side eval)
   void buildProbParmRuntime();
