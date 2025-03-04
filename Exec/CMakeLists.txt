@@ -1,4 +1,4 @@
-#add_subdirectory(Efield)
+#add_subdirectory(Plasma)
 #add_subdirectory(Production)
 if (NOT PELE_LIB)
     add_subdirectory(RegTests)
