@@ -4,7 +4,6 @@
 #include <PeleLMeX_BPatch.H>
 #include "PelePhysics.H"
 #include <AMReX_buildInfo.H>
-#include <PeleLMeX_ProblemSpecificFunctions.H>
 
 #ifdef PELE_USE_PLASMA
 #include "PeleLMeX_EOS_Extension.H"
@@ -946,7 +945,7 @@ PeleLM::variablesSetup()
 #endif
 #if NUM_ODE > 0
     Print() << " First ODE: " << FIRSTODE << "\n";
-    set_ode_names(m_ode_names);
+    ProblemSpecificFunctions::set_ode_names(m_ode_names);
     if (m_ode_names.size() != NUM_ODE) {
       Abort("ODEQty names improperly set. Adjust set_ode_names in "
             "ProblemSpecificFunctions or NUM_ODE in GNUMakefile");

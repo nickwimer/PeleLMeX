@@ -595,7 +595,7 @@ PeleLM::computeDifferentialDiffusionFluxes(
         grids[lev], dmap[lev], 1, 0, MFInfo(), EBFactory(lev));
       EBdiff[lev].define(grids[lev], dmap[lev], 1, 0, MFInfo(), EBFactory(lev));
       getEBDiff(lev, a_time, EBdiff[lev], NUM_SPECIES);
-      getEBState(lev, getTime(lev, a_time), EBvalue[lev], TEMP, 1);
+      getEBState(lev, a_time, EBvalue[lev], TEMP, 1);
     }
     getDiffusionOp()->computeDiffFluxes(
       a_fluxes, NUM_SPECIES, a_EBfluxes, 0,
@@ -1354,7 +1354,7 @@ PeleLM::differentialDiffusionUpdate(
         grids[lev], dmap[lev], 1, 0, MFInfo(), EBFactory(lev));
       EBdiff[lev].define(grids[lev], dmap[lev], 1, 0, MFInfo(), EBFactory(lev));
       getEBDiff(lev, AmrNewTime, EBdiff[lev], NUM_SPECIES);
-      getEBState(lev, getTime(lev, AmrNewTime), EBvalue[lev], TEMP, 1);
+      getEBState(lev, AmrNewTime, EBvalue[lev], TEMP, 1);
     }
     getDiffusionOp()->computeDiffFluxes(
       GetVecOfArrOfPtrs(fluxes), NUM_SPECIES, GetVecOfPtrs(EBfluxes), 0,
@@ -1599,7 +1599,7 @@ PeleLM::deltaTIter_update(
         grids[lev], dmap[lev], 1, 0, MFInfo(), EBFactory(lev));
       EBdiff[lev].define(grids[lev], dmap[lev], 1, 0, MFInfo(), EBFactory(lev));
       getEBDiff(lev, AmrNewTime, EBdiff[lev], NUM_SPECIES);
-      getEBState(lev, getTime(lev, AmrNewTime), EBvalue[lev], TEMP, 1);
+      getEBState(lev, AmrNewTime, EBvalue[lev], TEMP, 1);
     }
     getDiffusionOp()->computeDiffFluxes(
       a_fluxes, NUM_SPECIES, a_ebfluxes, 0,
