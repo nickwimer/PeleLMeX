@@ -1511,6 +1511,7 @@ public:
     std::unique_ptr<AdvanceAdvData>& advData,
     std::unique_ptr<AdvanceDiffData>& diffData);
 
+  bool checkForNaNs();
   void copyTransportOldToNew();
   void copyStateNewToOld(int nGhost = 0);
   void copyPressNewToOld();
