@@ -18,6 +18,7 @@ chk*
 plt*
 grdlog
 temporals
+*.visit
 
 # OSX files
 .DS_Store
@@ -28,4 +29,3 @@ temporals
 .project
 Exec/**/*.cproject
 Exec/**/*.project
-
