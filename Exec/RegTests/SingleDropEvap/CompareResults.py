@@ -108,7 +108,7 @@ def setup(case_name):
                 leg_lab[k] += ": Clasius-Clapeyron"
             else:
                 raise ValueError(f"Unknown Psat model in directory name: {d}")
-            
+            cases[k].case_path = d
         else:
             raise ValueError(f"Unknown liquid properties model in directory name: {d}")
 
@@ -122,7 +122,17 @@ def setup(case_name):
         elif "rungemix" in name.lower():
             leg_lab[k] += ": Mix"
             leg_col[k] = "tab:orange"
-
+        elif "rungejp8" in name.lower():
+            if ":" not in leg_lab[k]:
+                leg_lab[k] += ":"
+            if "hychem" in d.lower():
+                leg_lab[k] += " HyChem"
+                line_sty[k] = "-."
+            elif "detailed" in d.lower():
+                leg_lab[k] += " Detailed"
+                line_sty[k] = "--"
+            else:
+                leg_lab[k] += " Many-to-One"
     return cases, leg_lab, leg_col, line_sty
 
 
@@ -165,15 +175,17 @@ ylabels = [cases[0].ylabel if hasattr(cases[0], "ylabel") else "$d/d_0$"]
 if numplots == 2:
     ylabels.append("$T$ [K]")
 
+# Use wider figure for JP8 case to accommodate legend
+figwidth = 9.5 if case_name.lower() == "rungejp8" else 6.4
 fig, axs = (
-    plt.subplots(1, numplots, figsize=(numplots * 6.4, 4.8))
+    plt.subplots(1, numplots, figsize=(numplots * figwidth, 4.8), constrained_layout=True)
     if numplots > 1
-    else (plt.figure(), [plt.gca()])
+    else (plt.figure(figsize=(figwidth, 4.8), constrained_layout=True), [plt.gca()])
 )
 
 # Plot simulation lines first
-for k in range(len(cases)):
-    refdvals, reftvals, pele_vals = case_info(cases[k])
+for k, case in enumerate(cases):
+    refdvals, reftvals, pele_vals = case_info(case)
     # Diameter plot
     i = 0
     axs[i].plot(
@@ -189,7 +201,7 @@ for k in range(len(cases)):
     axs[i].set_xlim(min(pele_vals[:, 0]), max(pele_vals[:, 0]))
     axs[i].grid()
     axs[i].set_xlabel(
-        cases[k].xlabel if hasattr(cases[k], "xlabel") else "Time", fontsize=font_s
+        case.xlabel if hasattr(case, "xlabel") else "Time", fontsize=font_s
     )
 
     # Temperature plot if available
@@ -360,9 +372,13 @@ else:
                 uline = [uncrt[j, 2], uncrt[j, 3]]
                 axs[i].plot(tval, uline, "k-", linewidth=round(line_w / 2))
 
-# Single legend from axs[0] placed in rightmost subplot
+# Single legend from axs[0]
 handles, labels = axs[0].get_legend_handles_labels()
-axs[-1].legend(handles, labels, fontsize=font_s-2, loc="center left", bbox_to_anchor=(1, 0.5))
+if case_name.lower() == "rungejp8":
+    # Place legend outside for JP8 case
+    axs[-1].legend(handles, labels, fontsize=font_s-2, loc="center left", bbox_to_anchor=(1, 0.5))
+else:
+    # Place legend inside for other cases
+    axs[-1].legend(handles, labels, fontsize=font_s-2, loc="best")
 
-plt.tight_layout()
 plt.show()

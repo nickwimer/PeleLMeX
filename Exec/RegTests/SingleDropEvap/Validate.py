@@ -7,23 +7,26 @@ import argparse
 """
 Script for validating PelePhysics spray model
 Test cases:
-| Case Name  | Fuel           | Requirements for SPRAY_FUEL_NUM                |
-| ---------- | -------------- | ---------------------------------------------- |
-| Nomura     | heptane        | SPRAY_FUEL_NUM = 2                             |
-| WongLin    | decane         | SPRAY_FUEL_NUM = 2                             |
-| Daif       | heptane/decane | SPRAY_FUEL_NUM = 2                             |
-| RungeHep   | heptane        | SPRAY_FUEL_NUM = 2                             |
-| RungeDec   | decane         | SPRAY_FUEL_NUM = 2                             |
-| RungeMix   | heptane/decane | SPRAY_FUEL_NUM = 2                             |
-| RungeJP8   | POSF10264      | SPRAY_FUEL_NUM = 1                             |
-| ---------- | -------------- | ---------------------------------------------- |
+| Case Name   | Fuel           | Requirements for SPRAY_FUEL_NUM               |
+| ----------- | -------------- | --------------------------------------------- |
+| Nomura      | heptane        | SPRAY_FUEL_NUM = 2                            |
+| WongLin     | decane         | SPRAY_FUEL_NUM = 2                            |
+| Daif        | heptane/decane | SPRAY_FUEL_NUM = 2                            |
+| RungeHep    | heptane        | SPRAY_FUEL_NUM = 2                            |
+| RungeDec    | decane         | SPRAY_FUEL_NUM = 2                            |
+| RungeMix    | heptane/decane | SPRAY_FUEL_NUM = 2                            |
+| RungeJP8    | POSF10264      | SPRAY_FUEL_NUM = 67 (Many-to-one)             |
+| RungeJP8-H  | POSF10264      | SPRAY_FUEL_NUM = 1  (One-to-one, HyChem)      |
+| RungeJP8-D  | POSF10264      | SPRAY_FUEL_NUM = 67 (One-to-one, Detailed)    |
+| ----------- | -------------- | --------------------------------------------- |
 """
 
 parser = argparse.ArgumentParser(
     description="Run single droplet evaporation cases and compare to experimental data"
 )
 
-cases = ["WongLin", "Nomura", "Daif", "RungeHep", "RungeDec", "RungeMix", "RungeJP8"]
+cases = ["WongLin", "Nomura", "Daif", "RungeHep", "RungeDec", "RungeMix", 
+         "RungeJP8", "RungeJP8-H", "RungeJP8-D"]
 parser.add_argument(
     "--case_name",
     "-c",
@@ -78,6 +81,21 @@ parser.add_argument(
     default=6,
     help="number of processors for parallel runs, default: 6",
 )
+parser.add_argument(
+    "--log",
+    action="store_const",
+    const="log.out",
+    default=None,
+    help="Redirect output to log file (log.out)",
+)
+parser.add_argument(
+    "--runtime_flags",
+    "-r",
+    type=str,
+    nargs='*',
+    default=[],
+    help="Additional runtime flags to pass to PeleLMeX",
+)
 args = parser.parse_args()
 
 
@@ -106,15 +124,25 @@ build_new = args.build_new
 # Number of processors to run on
 num_proc = args.num_proc
 
+# Additional runtime flags for PeleLMeX
+runtime_flags = " ".join(args.runtime_flags)
+
 # Create case instance
 case = SpecifyCase(case_name, LiqPropsType, PeleMP_PsatModel, use_manifold=use_manifold)
 
-# General input file
-case.gen_input_file = f"single-drop-evap-{LiqPropsType.lower()}.inp"
+# General input and spray input files
+case.gen_input_file = f"single-drop-evap.inp"
 if "jp8" in case.name.lower():
-    case.gcm_input_file = f"sprayPropsGCM_mixture_jp8.inp"
+    if "hychem" in case.name.lower():
+        case.spray_input_file = f"sprayProps{LiqPropsType.upper()}_mixture_jp8.inp"
+    elif "detailed" in case.name.lower():
+        mech_path = "../../../Submodules/PelePhysics/Mechanisms/fuellib_posf_nonreacting/"
+        spray_input_file = f"spray_input_files/sprayProps{LiqPropsType.upper()}_posf10264.inp"
+        case.spray_input_file = mech_path + spray_input_file
+    else:   
+        case.spray_input_file = f"sprayProps{LiqPropsType.upper()}_jp8.inp"
 else:
-    case.gcm_input_file = f"sprayPropsGCM_heptane-decane.inp"
+    case.spray_input_file = f"sprayProps{LiqPropsType.upper()}_heptane-decane.inp"
 
 # Get reference values from experiments
 [refdvals, reftvals, refyvals] = ExtractRefVals(case)
@@ -138,6 +166,8 @@ if run_new:
     # Create case-specific input file
     CreateInputFile(case)
     if use_manifold:
+        if "detailed" in case.name.lower():
+            raise ValueError("RungeJP8-D is not compatible with Manifold model")
         CreateManifoldFiles(case, cmlm_path)
 
     # Build the executable if needed
@@ -148,7 +178,14 @@ if run_new:
         elif case.LiqPropsType.lower() == "mp":
             build_flags += " SPRAY_GCM=FALSE"
         if "jp8" in case.name.lower():
-            build_flags += " SPRAY_FUEL_NUM=1"
+            if "hychem" in case.name.lower():
+                build_flags += " SPRAY_FUEL_NUM=1"
+            elif "detailed" in case.name.lower():
+                build_flags += " SPRAY_FUEL_NUM=67"
+                build_flags += " Chemistry_Model=fuellib_posf_nonreacting"
+            else:
+                build_flags += " SPRAY_FUEL_NUM=67"
+                build_flags += " Manifold_Dim=1"
         else:
             build_flags += " SPRAY_FUEL_NUM=2"
         if use_manifold:
@@ -172,8 +209,17 @@ if run_new:
         if case.LiqPropsType.lower() == "mp" and ".SprayMP." not in f:
             continue
         if "jp8" in case.name.lower():
-            if ".1SprayFuel." not in f:
-                continue
+            if "hychem" in case.name.lower():
+                if ".1SprayFuel." not in f:
+                    continue
+            elif "detailed" in case.name.lower():
+                if ".67SprayFuel." not in f:
+                    continue
+                if ".fuellib_posf_nonreacting" not in f:
+                    continue
+            else:
+                if ".67SprayFuel." not in f:
+                    continue
         else:
             if ".2SprayFuel." not in f:
                 continue
@@ -197,10 +243,14 @@ if run_new:
         raise ValueError(error)
 
     # Run the case
+    run_command = f"./{exe} {case.input_file} {runtime_flags}"
+    if args.log:
+        print(f"Redirecting output to log file: {case.case_path}/{args.log}")
+        run_command += f" > {case.case_path}/{args.log} 2>&1"
     if ("MPI" in exe) and (num_proc > 1):
-        error = os.system(f"mpiexec -np {num_proc} ./{exe} {case.input_file}")
+        error = os.system(f"mpiexec -np {num_proc} {run_command}")
     else:
-        error = os.system(f"./{exe} {case.input_file}")
+        error = os.system(run_command)
     if error:
         raise RuntimeError(f"Pele simulation failed with error code {error}")
 

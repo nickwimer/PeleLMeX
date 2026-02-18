@@ -7,6 +7,7 @@ class Droplet:
         self.T = T
         self.dia = dia
         self.fuel_names = fuel_names
+        self.dep_fuel_names = None
         if Y is None:
             self.Y = [1.0, 0.0]
         else:
@@ -68,10 +69,12 @@ class CaseInfo:
         self.domain = domain
         self.cell_num = cell_num
         self.num_liq_spec = len(droplet.fuel_names)
+        self.use_file_y0 = False
 
         # File paths, names, etc.
         FILE_PATH = os.path.dirname(os.path.abspath(__file__))
         self.name = name
+        self.ref_name = name  # Name to use for reference data lookup
         self.dname = dname
         self.case_dir = f"{LiqPropsType.upper()}_{name}"
         if LiqPropsType.lower() == "mp":
@@ -84,8 +87,7 @@ class CaseInfo:
                 self.case_dir += "_Manifold"
         self.case_path = os.path.join(FILE_PATH, self.case_dir)
         self.input_file = os.path.join(self.case_path, f"input_{name}.inp")
-        if LiqPropsType.lower() == "gcm":
-            self.input_gcm = os.path.join(self.case_path, f"input_{name}_gcm.inp")
+        self.input_spray = os.path.join(self.case_path, f"input_{name}_spray.inp")
 
         # If reference is experimental or computational results
         if reftype is None:
@@ -157,7 +159,11 @@ def SpecifyCase(case_name, LiqPropsType, PeleMP_PsatModel="Antoine", **kwargs):
         case = RungeDec(LiqPropsType, PeleMP_PsatModel, **kwargs)
     elif case_name.lower() == "rungemix":
         case = RungeMix(LiqPropsType, PeleMP_PsatModel, **kwargs)
-    elif case_name.lower() == "rungejp8":
+    elif "rungejp8" in case_name.lower():
+        if "-h" in case_name.lower():
+            kwargs["hychem"] = True
+        elif "-d" in case_name.lower():
+            kwargs["detailed"] = True
         case = RungeJP8(LiqPropsType, PeleMP_PsatModel, **kwargs)
     else:
         raise ValueError(f"Unknown case name: {case_name}")
@@ -271,10 +277,17 @@ def RungeHep(LiqPropsType, PeleMP_PsatModel="Antoine", **kwargs):
 
 
 def RungeJP8(LiqPropsType, PeleMP_PsatModel="Antoine", **kwargs):
+    name = "RungeJP8"
+    if "hychem" in kwargs.keys():
+        if kwargs["hychem"]:
+            name += "_HyChem"
+    elif "detailed" in kwargs.keys():
+        if kwargs["detailed"]:
+            name += "_Detailed"
     drop = Droplet(294.15, 6.36e-4, ["POSF10264"], [1.0])
     gas = GasPhase(294.15, 1.01325e5, vel=3.0)
     case = CaseInfo(
-        "RungeJP8",
+        name, 
         "Runge et al.",
         drop,
         gas,
@@ -285,6 +298,9 @@ def RungeJP8(LiqPropsType, PeleMP_PsatModel="Antoine", **kwargs):
         PeleMP_PsatModel=PeleMP_PsatModel,
         **kwargs,
     )
+    case.use_file_y0 = True
+    # Use same reference data for RungeJP8, RungeJP8-H, and RungeJP8-D
+    case.ref_name = "RungeJP8"
     return case
 
 
@@ -375,40 +391,69 @@ def CreateInputFile(case):
         elif "particles.fixed_parts" in line:
             new_line = f"particles.fixed_parts = {fixed_parts:d}\n"
         elif "particles.Y_0" in line:
-            if case.LiqPropsType.lower() == "mp":
-                # Only edit gen_input for PeleMP case
-                new_line = "particles.Y_0 = "
+                # particles.Y_0 will be in sprayProps{case.LiqPropsType}_*.inp file
+                new_line = "\n"
+        elif "particles.fuel_species" in line:
+                # particles.fuel_species will be in sprayProps{case.LiqPropsType}_*.inp file
+                new_line = "\n"
+        elif "FILE" in line:
+            new_line = f"FILE = {case.case_dir}/input_{case.name}_spray.inp\n"
+        else:
+            new_line = line
+        new_lines.append(new_line)
+
+    # Save to output file
+    with open(case.input_file, "w") as f:
+        f.writelines(new_lines)
+
+    # Edit spray_input_file
+    spray_input_file = os.path.join(FILE_PATH, case.spray_input_file)
+
+    with open(spray_input_file, "r") as f:
+        spray_lines = f.readlines()
+
+    new_spray_lines = []
+    for line in spray_lines:
+        if "particles.Y_0" in line:
+            if case.use_file_y0:
+                new_line = line
+            else:
+                new_line = f"particles.Y_0 = "
                 for y in case.droplet.Y:
                     new_line += f"{y:.2f} "
                 new_line += "\n"
-            else:
-                # particles.Y_0 is in gcm_input_file
-                new_line = "\n"
         elif "particles.fuel_species" in line:
-            new_line = "particles.fuel_species = "
-            for n in case.droplet.fuel_names:
-                new_line += f"{n} "
-            new_line += "\n"
+            if ("jp8" in case.name.lower()) and ("hychem" not in case.name.lower()):
+                new_line = line
+                # Set fuel_names to list after "particles.fuel_species = "
+                case.droplet.fuel_names = line.split("=")[1].strip().split()
+            else: 
+                new_line = "particles.fuel_species = "
+                for fuel in case.droplet.fuel_names:
+                    new_line += f"{fuel} "
+                new_line += "\n"
+        elif "particles.dep_fuel_species" in line:
+            case.droplet.dep_fuel_names = line.split("=")[1].strip().split()
+            case.droplet.unique_dep_fuel_names = list(
+                set(case.droplet.dep_fuel_names)
+            )
+            new_line = line
+        elif "# Units" in line:
+            new_line = line
+            new_line += f"# Notes: Y_0 modified for {case.name} case\n"
         elif re.search(r"particles\S*_psat", line):
             if case.LiqPropsType.lower() == "mp":
-                # Only edit gen_input for PeleMP case
+                # Only edit for PeleMP case
                 if case.PeleMP_PsatModel.lower() == "antoine":
                     new_line = line
                     num_psat_lines += 1
                 else:
                     # Clausius-Clapeyron relation, ignore existing line
                     new_line = ""
-
-        elif "FILE" in line:
-            if case.LiqPropsType.lower() == "gcm":
-                new_line = f"FILE = {case.case_dir}/input_{case.name}_gcm.inp\n"
-            else:
-                # Ignore existing FILE line for PeleMP case
-                new_line = ""
         else:
             new_line = line
-        new_lines.append(new_line)
-
+        new_spray_lines.append(new_line)
+    
     # Check that Psat lines were found for PeleMP if needed
     if (case.LiqPropsType.lower() == "mp") and (
         case.PeleMP_PsatModel.lower() == "antoine"
@@ -418,55 +463,32 @@ def CreateInputFile(case):
             raise ValueError(error)
 
     # Save to output file
-    with open(case.input_file, "w") as f:
-        f.writelines(new_lines)
-
-    # For GCM cases edit particles.Y_0 in gcm_input_file
-    if case.LiqPropsType.lower() == "gcm":
-
-        gcm_input_file = os.path.join(FILE_PATH, case.gcm_input_file)
-
-        with open(gcm_input_file, "r") as f:
-            gcm_lines = f.readlines()
-
-        new_gcm_lines = []
-        for line in gcm_lines:
-            if "particles.Y_0" in line:
-                # Edit gcm_input_file for GCM case
-                new_line = f"particles.Y_0 = "
-                for y in case.droplet.Y:
-                    new_line += f"{y:.2f} "
-                new_line += "\n"
-            elif "# Units" in line:
-                new_line = line
-                new_line += f"# Notes: Y_0 modified for {case.name} case\n"
-            else:
-                new_line = line
-            new_gcm_lines.append(new_line)
-
-        # Save to output file
-        with open(case.input_gcm, "w") as f:
-            f.writelines(new_gcm_lines)
+    with open(case.input_spray, "w") as f:
+        f.writelines(new_spray_lines)
 
 
 def CreateManifoldFiles(case, cmlm_dir):
     if not os.path.exists(cmlm_dir):
         raise RuntimeError(f"CMLM installation not found at specified path: {cmlm_dir}")
     fuels = case.droplet.fuel_names
+    if case.droplet.dep_fuel_names is not None:
+        dep_fuels = case.droplet.unique_dep_fuel_names
+    else:
+        dep_fuels = fuels
 
     # first find latent heat for each fuel from input files
-    ifile = case.input_gcm if case.LiqPropsType.lower() == "gcm" else case.input_file
-    delta_h_vap = [0.0, 0.0]
-    found = [False] * len(fuels)
+    ifile = case.input_spray
+    delta_h_vap = [0.0] * len(dep_fuels)
+    found = [False] * len(dep_fuels)
     with open(ifile, "r") as f:
         for line in f.readlines():
-            for i, fuel in enumerate(fuels):
+            for i, fuel in enumerate(dep_fuels):
                 if line.startswith(f"particles.{fuel}_latent"):
                     delta_h_vap[i] = float(line.split("=")[1].split("#")[0])
                     found[i] = True
-    for ifound, fuel in zip(found, fuels):
+    for ifound, fuel in zip(found, dep_fuels):
         if not ifound:
-            raise RuntimeError(f"Latent heat not found in input files for fuel: {fuel}")
+            raise RuntimeError(f"Latent heat not found in input files for dep species: {fuel}")
 
     # full input data
     table_file = os.path.join(case.case_path, "table.ctb")
@@ -477,14 +499,14 @@ def CreateManifoldFiles(case, cmlm_dir):
             "pressure": case.gas.P,
             "X_ox": "O2:1.0, N2:3.76",
             "T_ox": case.gas.T,
-            "X_fuel": [f"{fuel}:1.0" for fuel in fuels],
-            "liq_temp_fuel": [case.droplet.T] * len(fuels),
+            "X_fuel": [f"{fuel}:1.0" for fuel in dep_fuels],
+            "liq_temp_fuel": [case.droplet.T] * len(dep_fuels),
             "delta_h_vap": delta_h_vap,
             "T_min": 100.0,
         },
         "table": {
             "use_fmix": False,
-            "grid": [50] * len(fuels),
+            "grid": [50] * len(dep_fuels),
             "filename": table_file,
             "metadata_file": table_metadata_file,
         },
@@ -518,9 +540,16 @@ def CreateManifoldFiles(case, cmlm_dir):
         f.write("manifold.compute_temperature = true \n")
         f.write("manifold.has_species_mw = true \n")
         f.write("manifold.v = 1 \n")
-        f.write(
-            "particles.dep_fuel_species = "
-            + " ".join([f"ZMIX{i}" for i in range(len(fuels))])
-            + "\n"
-        )
+        if "jp8" in case.name.lower() and "hychem" not in case.name.lower():
+            f.write(
+                "particles.dep_manifold_species = "
+                + " ".join([f"ZMIX0" for i in range(len(fuels))])
+                + "\n"
+            )
+        else:
+            f.write(
+                "particles.dep_manifold_species = "
+                + " ".join([f"ZMIX{i}" for i in range(len(fuels))])
+                + "\n"
+            )
         f.write("peleLM.use_wbar = 0 \n")

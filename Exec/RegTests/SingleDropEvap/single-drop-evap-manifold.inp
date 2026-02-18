@@ -21,12 +21,12 @@ amr.max_grid_size   = 64               # max box size
 prob.P_mean = 101325.0
 prob.init_redist   = -1
 prob.T0_gas = 1000.0
-prob.vel_gas = 0.000000
+prob.vel_gas = 0.0 #0.3856
 prob.num_particles = (1, 1, 1)
 prob.part_temp = 315.0
 prob.part_dia = 0.001961
-prob.part_vel = 0.000000 0.0 0.0
-prob.part_Re = 17.0
+prob.part_vel = 0.0 0.0 0.0
+prob.part_Re = 17
 
 #------------------------PeleLM CONTROL-----------------------------
 peleLM.v = 1
@@ -42,7 +42,7 @@ amr.stop_time = 4
 amr.fixed_dt = 0.01
 
 #--------------------------IO CONTROL-------------------------------
-amr.plot_file = "plt"
+amr.plot_file = "MP_WongLin_Antoine_Manifold/plt"
 amr.plot_int = 10
 amr.plot_speciesState = 1
 amr.plot_grad_p = 0
@@ -57,6 +57,13 @@ diffusion.rtol = 1.0e-12
 # ------------------INPUTS TO CHEMISTRY REACTOR---------------------
 peleLM.chem_integrator = "ReactorNull"
 
+manifold.model = Table
+manifold.v = 1
+manifold.table.filename = spray_wonglin.ctb
+peleLM.use_wbar = 0
+manifold.compute_temperature = true
+manifold.metadata_filename="manifold_metadata_wonglin.text"
+
 #--------------------SPRAY PARTICLE DATA-----------------------
 peleLM.do_spray_particles = 1
 particles.derive_plot_vars = 1
@@ -67,4 +74,7 @@ particles.fixed_parts = 1
 particles.mom_transfer  = 1
 particles.mass_transfer = 1
 
-FILE = sprayPropsGCM_heptane-decane.inp
+particles.fuel_species = NC10H22
+particles.dep_manifold_species = ZMIX0
+
+FILE="sprayPropsMP_heptane-decane.inp"
