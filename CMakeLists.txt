@@ -81,7 +81,7 @@ if (PELE_PYTHON)
 endif()
 
 # C++ Options
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -91,9 +91,9 @@ endif()
 
 if(PELE_ENABLE_CUDA)
   enable_language(CUDA)
-  if(CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.0")
+  if(CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "12.0")
     message(FATAL_ERROR "Your nvcc version is ${CMAKE_CUDA_COMPILER_VERSION} which is unsupported."
-      "Please use CUDA toolkit version 10.0 or newer.")
+      "Please use CUDA toolkit version 12.0 or newer.")
   endif()
   if(DEFINED CMAKE_CUDA_ARCHITECTURES AND "${CMAKE_CUDA_ARCHITECTURES}" STREQUAL "")
     unset(CMAKE_CUDA_ARCHITECTURES CACHE)
