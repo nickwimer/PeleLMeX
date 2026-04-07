@@ -265,8 +265,9 @@ init_code_checks()
 
 include(SetRpath)
 
-# enable_testing()
-# include(CTest)
+########################### Git Hash Info ##################################
+include(SetGitHashInfo)
+
 add_subdirectory(Exec)
 add_subdirectory(Tests)
 if (PELE_PHYSICS_ENABLE_RADIATION)
