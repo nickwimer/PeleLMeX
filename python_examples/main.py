@@ -13,15 +13,20 @@ def rank_print(message, rank=0):
 
 
 def init_runtime():
-    global COMM, RANK, libpelelmex
-
-    from mpi4py import MPI
+    global libpelelmex
 
     from pypelelmex._libpelelmex import libpelelmex as _libpelelmex
 
+    libpelelmex = _libpelelmex
+
+
+def attach_mpi():
+    global COMM, RANK
+
+    from mpi4py import MPI
+
     COMM = MPI.COMM_WORLD
     RANK = COMM.Get_rank()
-    libpelelmex = _libpelelmex
 
 
 def ensure_tmpdir_writable():
@@ -108,6 +113,9 @@ def main():
         rank_print(f"Initializing AMReX with input file: {input_file}")
         libpelelmex.libpelelmex.initialize_amrex(input_file)
         amrex_initialized = True
+
+        attach_mpi()
+
         rank_print("AMReX initialized.")
 
         rank_print("Initializing SUNDIALS...")
@@ -142,7 +150,9 @@ def main():
 
     except Exception as exc:
         print(f"[rank {RANK}] Fatal error: {exc}", flush=True)
-        COMM.Abort(1)
+        if COMM is not None:
+            COMM.Abort(1)
+        raise
     finally:
         if pelelm_created:
             rank_print("Finalizing PeleLM instance...")

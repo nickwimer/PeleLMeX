@@ -174,5 +174,5 @@ setup(
         "all": ["yt>=4.1.0", "matplotlib"],
     },
     zip_safe=False,
-    python_requires="<3.12",
+    python_requires=">3.12",
 )
