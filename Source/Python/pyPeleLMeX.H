@@ -2,6 +2,7 @@
 #define PELELMEX_PYPELELMEX_H
 
 #include <PeleLMeX.H>
+#include <AMReX_ParallelDescriptor.H>
 
 #include <pybind11/functional.h>
 #include <pybind11/numpy.h>
@@ -15,7 +16,7 @@
 namespace py = pybind11;
 
 // Function to initialize AMReX and pass in input file
-void initAmrex(const std::string& input_file);
+MPI_Comm initAmrex(const std::string& input_file, MPI_Comm mpi_comm);
 
 // Function to finalize AMReX
 void finalizeAmrex();

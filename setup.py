@@ -134,7 +134,7 @@ print(f"PYPELELMEX_LIB_DIR: {PYPELELMEX_LIB_DIR}")
 
 env = os.environ.copy()
 
-ENABLE_MPI = os.environ.pop("ENABLE_MPI", "OFF")
+ENABLE_MPI = os.environ.get("PELE_ENABLE_MPI", os.environ.get("ENABLE_MPI", "OFF"))
 
 if PYPELELMEX_LIB_DIR:
     cmdclass = dict(build=CopyPreBuild)

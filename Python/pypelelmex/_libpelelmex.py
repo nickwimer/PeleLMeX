@@ -1,4 +1,6 @@
-# import atexit
+import importlib
+import os
+import sys
 
 
 class LibPeleLMeX:
@@ -16,21 +18,38 @@ class LibPeleLMeX:
             return self.__getattribute__(attribute)
 
     def load_library(self):
-
-        if "libpelelmex_so" in self.__dict__:
+        if "libpelelmex" in self.__dict__:
             raise RuntimeError("libpelelmex has already been loaded")
 
+        # Try both dimensional AMReX Python modules so runtime can match
+        # the build dimension instead of hard-coding 3D.
+        amrex_import_errors = []
+        self.amr = None
+        for amrex_module_name in ("amrex.space3d", "amrex.space2d"):
+            try:
+                self.amr = importlib.import_module(amrex_module_name)
+                break
+            except ImportError as exc:
+                amrex_import_errors.append(f"{amrex_module_name}: {exc}")
+
+        if self.amr is None:
+            raise ImportError(
+                "Could not import AMReX Python module (tried amrex.space3d/amrex.space2d).\n"
+                + "\n".join(amrex_import_errors)
+            )
+
         try:
-            import amrex.space3d as amr
-
-            self.amr = amr
-
-            from . import pelelmex_pybind as cxx
-
+            cxx = importlib.import_module(".pelelmex_pybind", package=__package__)
             self.libpelelmex = cxx
-
-        except ImportError:
-            raise ImportError("Could not import libpelelmex")
+        except ImportError as exc:
+            raise ImportError(
+                "Could not import pypelelmex.pelelmex_pybind. "
+                "Verify pypelelmex was built/installed and that the extension exists on sys.path.\n"
+                f"cwd={os.getcwd()}\n"
+                f"package={__package__}\n"
+                f"sys.path[0:5]={sys.path[:5]}\n"
+                f"original error: {exc}"
+            ) from exc
 
     # def initialize(self):
     #     self.amr.initialize([])

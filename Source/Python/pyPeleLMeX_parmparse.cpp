@@ -9,6 +9,7 @@
 #include <PeleLMeX_BPatch.H>
 #include <PelePhysics.H>
 #include <AMReX_buildInfo.H>
+#include <AMReX_ParallelDescriptor.H>
 
 using namespace amrex;
 

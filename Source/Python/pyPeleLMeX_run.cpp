@@ -1,6 +1,7 @@
 #include "pyPeleLMeX.H"
 #include <AMReX_ParmParse.H>
 #include <PeleLMeX.H>
+#include <AMReX_ParallelDescriptor.H>
 
 // Function to run PeleLMeX in Evolve mode
 void

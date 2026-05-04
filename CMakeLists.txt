@@ -92,7 +92,8 @@ if(PELE_ENABLE_CUDA)
       "Please use CUDA toolkit version 10.0 or newer.")
   endif()
   if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
-    set(CMAKE_CUDA_ARCHITECTURES 70)
+    set(CMAKE_CUDA_ARCHITECTURES 90 CACHE STRING "CUDA architectures to build for")
+    message(STATUS "CMAKE_CUDA_ARCHITECTURES not set: defaulting to 90.")
   endif()
 endif()
 
@@ -408,7 +409,7 @@ if (PELE_PYTHON)
   target_link_libraries(${pele_exe_name} PUBLIC ${pele_physics_lib_name})
   target_link_libraries(${pele_exe_name} PUBLIC pybind11::module)
   target_link_libraries(pyPeleLMeX PUBLIC pybind11::module)
-  target_link_libraries(pyPeleLMeX PUBLIC PeleLMeX::thirdparty::amrex_3d)
+  target_link_libraries(pyPeleLMeX PUBLIC PeleLMeX::thirdparty::amrex_${SD})
 
   foreach(pelelmex_tgt IN LISTS _ALL_TARGETS)
     target_compile_features(${pelelmex_tgt} PUBLIC cxx_std_17)
@@ -486,7 +487,7 @@ if (PELE_PYTHON)
     add_custom_target(${PeleLMeX_CUSTOM_TARGET_PREFIX}pip_wheel
       ${CMAKE_COMMAND} -E rm -f -r pelelmex-whl
       COMMAND
-          ${CMAKE_COMMAND} -E env PYPELELMEX_LIB_DIR=$<TARGET_FILE_DIR:pyPeleLMeX>
+        ${CMAKE_COMMAND} -E env PYPELELMEX_LIB_DIR=$<TARGET_FILE_DIR:pyPeleLMeX> PELE_ENABLE_MPI=${PELE_ENABLE_MPI} ENABLE_MPI=${PELE_ENABLE_MPI}
               ${Python_EXECUTABLE} -m pip wheel -v --no-build-isolation --no-deps --wheel-dir=pelelmex-whl ${PeleLMeX_SOURCE_DIR}
       WORKING_DIRECTORY
           ${PeleLMeX_BINARY_DIR}
@@ -516,7 +517,7 @@ if (PELE_PYTHON)
     # the package does not change, but the code did change. We need --no-deps,
     # because otherwise pip would also force reinstall all dependencies.
     add_custom_target(${PeleLMeX_CUSTOM_TARGET_PREFIX}pip_install
-      ${CMAKE_COMMAND} -E env PELE_ENABLE_MPI=${PELE_ENABLE_MPI}
+      ${CMAKE_COMMAND} -E env PELE_ENABLE_MPI=${PELE_ENABLE_MPI} ENABLE_MPI=${PELE_ENABLE_MPI}
           ${Python_EXECUTABLE} -m pip install --force-reinstall --no-index --no-deps ${PYINSTALLOPTIONS} --find-links=pelelmex-whl pypelelmex
       WORKING_DIRECTORY
           ${PeleLMeX_BINARY_DIR}
@@ -530,7 +531,7 @@ if (PELE_PYTHON)
 
     # this is for package managers only
     add_custom_target(${PeleLMeX_CUSTOM_TARGET_PREFIX}pip_install_nodeps
-      ${CMAKE_COMMAND} -E env PELE_ENABLE_MPI=${PELE_ENABLE_MPI}
+      ${CMAKE_COMMAND} -E env PELE_ENABLE_MPI=${PELE_ENABLE_MPI} ENABLE_MPI=${PELE_ENABLE_MPI}
           ${Python_EXECUTABLE} -m pip install --force-reinstall --no-index --no-deps ${PYINSTALLOPTIONS} --find-links=pelelmex-whl pypelelmex
       WORKING_DIRECTORY
           ${PeleLMeX_BINARY_DIR}

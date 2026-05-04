@@ -121,6 +121,23 @@ To install, follow the following steps:
 3) `cmake -S . build_py -DPELE_PYTHON=ON -DPELE_LIB=ON`
 4) `cmake --build build_py --target pip_install`
 
+If running from conda environment on macos:
+```bash
+cmake -S . -B build_py \
+  -DPELE_PYTHON=ON \
+  -DPELE_LIB=ON \
+  -DCMAKE_PREFIX_PATH="$CONDA_PREFIX" \
+  -DMPI_C_COMPILER="$CONDA_PREFIX/bin/mpicc" \
+  -DMPI_CXX_COMPILER="$CONDA_PREFIX/bin/mpicxx"
+```
+
+```bash
+cmake -S . -B build_py -DCMAKE_INSTALL_PREFIX="$CONDA_PREFIX"
+cmake --build build_py -j
+cmake --install build_py
+cmake --build build_py --target pip_install
+```
+
 Afterwards, you should have a python package called `pypelelmex`.
 
 Below are optional flags commonly used:
@@ -183,6 +200,14 @@ module load craype-x86-milan;
 make realclean; make -j COMP=gnu USE_CUDA=TRUE
 ```
 
+Some macOS systems will need a dedicated temp directory:
+
+```bash
+export TMPDIR="$HOME/.pypelelmex_tmp"
+export OMPI_MCA_orte_tmpdir_base="$TMPDIR"
+export OMPI_MCA_prte_tmpdir_base="$TMPDIR"
+mkdir -p "$TMPDIR" && chmod 700 "$TMPDIR"
+```
 
 
 ## Getting help, contributing

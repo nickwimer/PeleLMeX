@@ -18,14 +18,21 @@ init_pelelmex(py::module& m)
 {
   // Initialize AMReX with input file
   m.def(
-    "initialize_amrex", &initAmrex, py::arg("input_file") = "",
-    "Initialize AMReX with an optional input file.");
+    "initialize_amrex",
+    [](const std::string& input_file) -> void {
+      (void)initAmrex(input_file, MPI_COMM_WORLD);
+    },
+    py::arg("input_file") = "",
+    "Initialize AMReX with an optional input file on MPI_COMM_WORLD only.");
   // Finalize AMReX
   m.def("finalize_amrex", &finalizeAmrex, "Finalize AMReX library.");
   // Create PeleLM instance
   m.def("create_pelelmex", &createPeleLMeX, "Create the PeleLM instance.");
   // Initialize the PeleLMeX Case
-  m.def("initialize_pelelmex", &initPeleLMeX, "Initialize the PeleLM case.");
+  m.def(
+    "initialize_pelelmex", &initPeleLMeX,
+    py::call_guard<py::gil_scoped_release>(),
+    "Initialize the PeleLM case.");
   // Get the PeleLM instance
   m.def(
     "get_pelelmex", []() -> PeleLM& { return getPeleLMeX(); },
@@ -41,7 +48,7 @@ init_pelelmex(py::module& m)
   m.def(
     "initialize_sundials", &amrex::sundials::Initialize,
     "Initialize Sundials with optional thread count",
-    py::arg("nthreads") = amrex::OpenMP::get_max_threads());
+    py::arg("nthreads") = 1); // Default to 1 thread for now...
   // Finalize Sundials
   m.def("finalize_sundials", &amrex::sundials::Finalize, "Finalize Sundials.");
 }
@@ -50,9 +57,15 @@ void
 run_pelelmex(py::module& m)
 {
   // Function to run PeleLMeX in evolve mode
-  m.def("evolve_pelelmex", &evolvePeleLMeX, "Run PeleLM in evolve mode.");
+  m.def(
+    "evolve_pelelmex", &evolvePeleLMeX,
+    py::call_guard<py::gil_scoped_release>(),
+    "Run PeleLM in evolve mode.");
   // Function to run PeleLMeX in evaluate mode
-  m.def("evaluate_pelelmex", &evaluatePeleLMeX, "Run PeleLM in evaluate mode.");
+  m.def(
+    "evaluate_pelelmex", &evaluatePeleLMeX,
+    py::call_guard<py::gil_scoped_release>(),
+    "Run PeleLM in evaluate mode.");
 }
 
 void

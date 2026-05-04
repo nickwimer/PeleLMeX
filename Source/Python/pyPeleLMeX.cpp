@@ -2,6 +2,7 @@
 
 #include <PeleLMeX_Index.H>
 #include <Python.h>
+#include <AMReX_ParallelDescriptor.H>
 
 #define PYPELELMEX_MODULE_NAME pelelmex_pybind
 
@@ -14,13 +15,27 @@ void pp_pelelmex(py::module&);
 
 PYBIND11_MODULE(PYPELELMEX_MODULE_NAME, m)
 {
-  auto amr = py::module::import("amrex.space3d");
+#if (AMREX_SPACEDIM == 3)
+  constexpr auto amrex_module_name = "amrex.space3d";
+#elif (AMREX_SPACEDIM == 2)
+  constexpr auto amrex_module_name = "amrex.space2d";
+#else
+#error "Unsupported AMREX_SPACEDIM for pyPeleLMeX."
+#endif
+
+  auto amr = py::module::import(amrex_module_name);
 
   m.doc() = "test module for PeleLMeX";
 
   init_pelelmex(m);
   run_pelelmex(m);
   pp_pelelmex(m);
+
+  // m.def("get_mpi_rank", []() {
+  //   int rank;
+  //   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  //   return rank;
+  // });
 
   // expose our amrex module
   m.attr("amr") = amr;
