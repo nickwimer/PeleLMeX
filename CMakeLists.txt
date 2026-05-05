@@ -91,9 +91,20 @@ if(PELE_ENABLE_CUDA)
     message(FATAL_ERROR "Your nvcc version is ${CMAKE_CUDA_COMPILER_VERSION} which is unsupported."
       "Please use CUDA toolkit version 10.0 or newer.")
   endif()
+  if(DEFINED CMAKE_CUDA_ARCHITECTURES AND "${CMAKE_CUDA_ARCHITECTURES}" STREQUAL "")
+    unset(CMAKE_CUDA_ARCHITECTURES CACHE)
+  endif()
+  if(DEFINED CMAKE_CUDA_ARCHITECTURES)
+    string(TOLOWER "${CMAKE_CUDA_ARCHITECTURES}" _cuda_arch_lower)
+    if(_cuda_arch_lower STREQUAL "auto")
+      message(WARNING "CMAKE_CUDA_ARCHITECTURES=Auto is not compatible with this SUNDIALS CUDA build; defaulting to 80. Set a numeric architecture explicitly (e.g. 80 or 90).")
+      set(CMAKE_CUDA_ARCHITECTURES 80 CACHE STRING "CUDA architectures to build for" FORCE)
+    endif()
+    unset(_cuda_arch_lower)
+  endif()
   if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
-    set(CMAKE_CUDA_ARCHITECTURES 90 CACHE STRING "CUDA architectures to build for")
-    message(STATUS "CMAKE_CUDA_ARCHITECTURES not set: defaulting to 90.")
+    set(CMAKE_CUDA_ARCHITECTURES 80 CACHE STRING "CUDA architectures to build for")
+    message(STATUS "CMAKE_CUDA_ARCHITECTURES not set: defaulting to 80.")
   endif()
 endif()
 
@@ -313,7 +324,6 @@ if (PELE_PYTHON)
 
   add_library(pyPeleLMeX MODULE 
     Source/Python/pyPeleLMeX.cpp
-    Source/pelelmex_prob.H
   )
 
 
@@ -410,6 +420,15 @@ if (PELE_PYTHON)
   target_link_libraries(${pele_exe_name} PUBLIC pybind11::module)
   target_link_libraries(pyPeleLMeX PUBLIC pybind11::module)
   target_link_libraries(pyPeleLMeX PUBLIC PeleLMeX::thirdparty::amrex_${SD})
+
+  if (PELE_ENABLE_CUDA)
+    if(NOT DEFINED AMREX_CUDA_ARCHS OR "${AMREX_CUDA_ARCHS}" STREQUAL "")
+      set(AMREX_CUDA_ARCHS "${CMAKE_CUDA_ARCHITECTURES}")
+    endif()
+    include(AMReXTargetHelpers)
+    setup_target_for_cuda_compilation(${pele_exe_name})
+    setup_target_for_cuda_compilation(pyPeleLMeX)
+  endif()
 
   foreach(pelelmex_tgt IN LISTS _ALL_TARGETS)
     target_compile_features(${pelelmex_tgt} PUBLIC cxx_std_17)
