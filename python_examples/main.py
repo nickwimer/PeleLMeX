@@ -125,9 +125,6 @@ def main():
         rank_print(f"Initializing AMReX with input file: {input_file}")
         libpelelmex.libpelelmex.initialize_amrex(input_file)
         amrex_initialized = True
-
-        attach_mpi()
-
         rank_print("AMReX initialized.")
 
         rank_print("Initializing SUNDIALS...")
