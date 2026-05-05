@@ -1,6 +1,12 @@
 #ifndef PELELM_PROB_PARM_H
 #define PELELM_PROB_PARM_H
 
+#include <map>
+#include <sstream>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
 #include <AMReX_REAL.H>
 #include <AMReX_GpuMemory.H>
 #include <AMReX_Parser.H>
@@ -9,8 +15,45 @@ using namespace amrex::literals;
 
 struct ProbParm
 {
+  static constexpr int NUM_BC_FACES = 6;
+  static constexpr int MAX_MIXTURES = 16;
+  static constexpr int MAX_SPECIES_PER_MIXTURE = 256;
+
   // Placeholder
   amrex::Real P_mean = 101325.0_rt;
+
+  // Runtime parser payload for IC expressions (GPU/CPU evaluator path)
+  int ic_runtime_ready = 0;
+  amrex::ParserExecutor<2> ic_center_x;
+  amrex::ParserExecutor<2> ic_center_y;
+  amrex::ParserExecutor<2> ic_center_z;
+  amrex::ParserExecutor<3> ic_press;
+  amrex::ParserExecutor<3> ic_temp;
+  amrex::ParserExecutor<3> ic_spec;
+  amrex::ParserExecutor<3> ic_velx;
+  amrex::ParserExecutor<3> ic_vely;
+  amrex::ParserExecutor<3> ic_velz;
+
+  int ic_num_mixtures = 0;
+  int ic_mix_species_count[MAX_MIXTURES] = {0};
+  int ic_mix_species_id[MAX_MIXTURES * MAX_SPECIES_PER_MIXTURE] = {0};
+  amrex::Real ic_mix_species_val[MAX_MIXTURES * MAX_SPECIES_PER_MIXTURE] =
+    {0.0_rt};
+
+  // Runtime parser payload for BC expressions (GPU/CPU evaluator path)
+  int bc_runtime_ready = 0;
+  amrex::ParserExecutor<4> bc_press[NUM_BC_FACES];
+  amrex::ParserExecutor<4> bc_temp[NUM_BC_FACES];
+  amrex::ParserExecutor<4> bc_spec[NUM_BC_FACES];
+  amrex::ParserExecutor<4> bc_velx[NUM_BC_FACES];
+  amrex::ParserExecutor<4> bc_vely[NUM_BC_FACES];
+  amrex::ParserExecutor<4> bc_velz[NUM_BC_FACES];
+  int bc_num_mixtures[NUM_BC_FACES] = {0};
+  int bc_mix_species_count[NUM_BC_FACES * MAX_MIXTURES] = {0};
+  int bc_mix_species_id
+    [NUM_BC_FACES * MAX_MIXTURES * MAX_SPECIES_PER_MIXTURE] = {0};
+  amrex::Real bc_mix_species_val
+    [NUM_BC_FACES * MAX_MIXTURES * MAX_SPECIES_PER_MIXTURE] = {0.0_rt};
 
   // Initial condition expressions and dictionaries
   // ************************************************************
@@ -128,7 +171,6 @@ struct ProbParm
 };
 
 // Function to replace placeholders in the given string
-AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 std::string
 replacePlaceholders(
@@ -145,7 +187,6 @@ replacePlaceholders(
   return input_str;
 }
 
-AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 void
 parseAndSetConstants(const std::string& dict_str, amrex::Parser& parser)
@@ -181,7 +222,6 @@ parseAndSetConstants(const std::string& dict_str, amrex::Parser& parser)
   }
 }
 
-AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 void
 parseAndSetConstantsAndSpecies(

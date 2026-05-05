@@ -1,6 +1,9 @@
 #ifndef PeleLMeX_H
 #define PeleLMeX_H
 
+#include <memory>
+#include <vector>
+
 // PeleLMeX includes
 #include "PeleLMeX_UserKeys.H"
 #include "PeleLMeX_Index.H"
@@ -117,6 +120,9 @@ public:
 
   // ReadProblemParameters
   void readProbParm();
+
+  // Build runtime parser payload (host-side parse, device-side eval)
+  void buildProbParmRuntime();
 
   // ReadGridFile
   void
@@ -1695,6 +1701,7 @@ public:
   // Problem parameters
   ProbParm* prob_parm = nullptr;
   ProbParm* prob_parm_d = nullptr;
+  std::vector<std::unique_ptr<amrex::Parser>> m_prob_parsers;
 
   // Patch parameters
   BPatch* boundary_patches = nullptr;

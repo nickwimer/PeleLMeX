@@ -1,8 +1,8 @@
 import argparse
 import os
 import tempfile
+import time
 
-COMM = None
 RANK = 0
 libpelelmex = None
 
@@ -20,13 +20,21 @@ def init_runtime():
     libpelelmex = _libpelelmex
 
 
-def attach_mpi():
-    global COMM, RANK
-
-    from mpi4py import MPI
-
-    COMM = MPI.COMM_WORLD
-    RANK = COMM.Get_rank()
+def detect_rank_from_env():
+    for name in (
+        "SLURM_PROCID",
+        "PMI_RANK",
+        "PMIX_RANK",
+        "OMPI_COMM_WORLD_RANK",
+        "MV2_COMM_WORLD_RANK",
+    ):
+        value = os.environ.get(name)
+        if value is not None:
+            try:
+                return int(value)
+            except ValueError:
+                pass
+    return 0
 
 
 def ensure_tmpdir_writable():
@@ -93,8 +101,12 @@ def resolve_input_file(input_arg):
 
 
 def main():
+    global RANK
+
     args = parse_args()
     ensure_tmpdir_writable()
+    start_time = time.perf_counter()
+    RANK = detect_rank_from_env()
     init_runtime()
     input_file = resolve_input_file(args.input)
 
@@ -113,9 +125,6 @@ def main():
         rank_print(f"Initializing AMReX with input file: {input_file}")
         libpelelmex.libpelelmex.initialize_amrex(input_file)
         amrex_initialized = True
-
-        attach_mpi()
-
         rank_print("AMReX initialized.")
 
         rank_print("Initializing SUNDIALS...")
@@ -136,8 +145,7 @@ def main():
         libpelelmex.libpelelmex.initialize_pelelmex()
         rank_print("PeleLMeX case initialized.")
 
-        run_mode_local = libpelelmex.libpelelmex.get_run_mode()
-        run_mode = COMM.bcast(run_mode_local if RANK == 0 else None, root=0)
+        run_mode = libpelelmex.libpelelmex.get_run_mode()
 
         if run_mode == "normal":
             rank_print("Running PeleLM in Evolve mode...")
@@ -150,8 +158,6 @@ def main():
 
     except Exception as exc:
         print(f"[rank {RANK}] Fatal error: {exc}", flush=True)
-        if COMM is not None:
-            COMM.Abort(1)
         raise
     finally:
         if pelelm_created:
@@ -167,6 +173,14 @@ def main():
             rank_print("Finalizing AMReX...")
             libpelelmex.libpelelmex.finalize_amrex()
             rank_print("AMReX finalized.")
+
+        # Elapsed wall time
+        try:
+            end_time = time.perf_counter()
+            elapsed = end_time - start_time
+            rank_print(f"Elapsed time: {elapsed:.6f} seconds")
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":

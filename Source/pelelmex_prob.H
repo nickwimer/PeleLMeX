@@ -34,6 +34,47 @@ pelelmex_initdata(
                , const amrex::Real y = prob_lo[1] + (j + 0.5) * dx[1];
                , const amrex::Real z = prob_lo[2] + (k + 0.5) * dx[2];);
 
+  amrex::Real press = prob_parm.P_mean;
+  amrex::Real temp = 300.0;
+  amrex::Real velx = 0.0;
+  amrex::Real vely = 0.0;
+  amrex::Real velz = 0.0;
+  amrex::Real massfrac[NUM_SPECIES] = {0.0};
+
+#ifdef AMREX_USE_GPU
+  if (prob_parm.ic_runtime_ready != 0) {
+    amrex::Real x_c = prob_parm.ic_center_x(prob_lo[0], prob_hi[0]);
+    amrex::Real y_c = prob_parm.ic_center_y(prob_lo[1], prob_hi[1]);
+    amrex::Real z_c = prob_parm.ic_center_z(prob_lo[2], prob_hi[2]);
+
+    press = prob_parm.ic_press(x - x_c, y - y_c, z - z_c);
+    temp = prob_parm.ic_temp(x - x_c, y - y_c, z - z_c);
+    velx = prob_parm.ic_velx(x - x_c, y - y_c, z - z_c);
+    vely = prob_parm.ic_vely(x - x_c, y - y_c, z - z_c);
+    velz = prob_parm.ic_velz(x - x_c, y - y_c, z - z_c);
+
+    int mixture_index =
+      static_cast<int>(prob_parm.ic_spec(x - x_c, y - y_c, z - z_c));
+    if (mixture_index < 0) {
+      mixture_index = 0;
+    }
+    if (mixture_index >= prob_parm.ic_num_mixtures) {
+      mixture_index = prob_parm.ic_num_mixtures - 1;
+    }
+
+    int n_mix_species = prob_parm.ic_mix_species_count[mixture_index];
+    for (int m = 0; m < n_mix_species; ++m) {
+      int flat_idx = mixture_index * ProbParm::MAX_SPECIES_PER_MIXTURE + m;
+      int sid = prob_parm.ic_mix_species_id[flat_idx];
+      if (sid >= 0 && sid < NUM_SPECIES) {
+        massfrac[sid] = prob_parm.ic_mix_species_val[flat_idx];
+      }
+    }
+  } else {
+    massfrac[0] = 1.0;
+  }
+#else
+
   // Get the coordinate expressions, replace placeholders, and create parsers
   std::string x_expr = prob_parm.ic_x_expr ? prob_parm.ic_x_expr : "0.0";
   x_expr = replacePlaceholders(x_expr, {{"%EQ%", "="}});
@@ -144,21 +185,20 @@ pelelmex_initdata(
   amrex::Real z_c = f_z(prob_lo[2], prob_hi[2]);
 
   // Evaluate the expressions
-  amrex::Real press = f_press(x - x_c, y - y_c, z - z_c);
-  amrex::Real temp = f_temp(x - x_c, y - y_c, z - z_c);
-  amrex::Real velx = f_velx(x - x_c, y - y_c, z - z_c);
-  amrex::Real vely = f_vely(x - x_c, y - y_c, z - z_c);
-  amrex::Real velz = f_velz(x - x_c, y - y_c, z - z_c);
+  press = f_press(x - x_c, y - y_c, z - z_c);
+  temp = f_temp(x - x_c, y - y_c, z - z_c);
+  velx = f_velx(x - x_c, y - y_c, z - z_c);
+  vely = f_vely(x - x_c, y - y_c, z - z_c);
+  velz = f_velz(x - x_c, y - y_c, z - z_c);
 
   // Evaluate the expression to determine which mixture to use
   int mixture_index = static_cast<int>(f_spec(x - x_c, y - y_c, z - z_c));
-
-  amrex::Real massfrac[NUM_SPECIES] = {0.0};
 
   for (const auto& [species_name, fraction] :
        species_map.at(mixture_names[mixture_index])) {
     massfrac[get_spec_id_by_name(species_name)] = fraction;
   }
+#endif
 
   // ******************************************************
   // Set the state variables
@@ -201,7 +241,86 @@ bcnormal(
 
   auto eos = pele::physics::PhysicsType::eos();
 
-  // Get all of the boundary condition expressions and dictionaries
+#ifdef AMREX_USE_GPU
+  amrex::Real massfrac[NUM_SPECIES] = {0.0};
+  amrex::Real press = prob_parm.P_mean;
+  amrex::Real temp = 300.0;
+  amrex::Real velx = 0.0;
+  amrex::Real vely = 0.0;
+  amrex::Real velz = 0.0;
+
+  int face = -1;
+  if (idir == 0 && sgn == 1) {
+    face = 0;
+  } else if (idir == 0 && sgn == -1) {
+    face = 1;
+  } else if (idir == 1 && sgn == 1) {
+    face = 2;
+  } else if (idir == 1 && sgn == -1) {
+    face = 3;
+  } else if (idir == 2 && sgn == 1) {
+    face = 4;
+  } else if (idir == 2 && sgn == -1) {
+    face = 5;
+  }
+
+  if (prob_parm.bc_runtime_ready != 0 && face >= 0) {
+    press = prob_parm.bc_press[face](x[0], x[1], x[2], time);
+    temp = prob_parm.bc_temp[face](x[0], x[1], x[2], time);
+    velx = prob_parm.bc_velx[face](x[0], x[1], x[2], time);
+    vely = prob_parm.bc_vely[face](x[0], x[1], x[2], time);
+    velz = prob_parm.bc_velz[face](x[0], x[1], x[2], time);
+
+    int mixture_index =
+      static_cast<int>(prob_parm.bc_spec[face](x[0], x[1], x[2], time));
+    int n_mix = prob_parm.bc_num_mixtures[face];
+    if (n_mix <= 0) {
+      n_mix = 1;
+    }
+    if (mixture_index < 0) {
+      mixture_index = 0;
+    }
+    if (mixture_index >= n_mix) {
+      mixture_index = n_mix - 1;
+    }
+
+    const int base_mix_count = face * ProbParm::MAX_MIXTURES;
+    const int base_mix_data =
+      face * ProbParm::MAX_MIXTURES * ProbParm::MAX_SPECIES_PER_MIXTURE;
+    int n_mix_species =
+      prob_parm.bc_mix_species_count[base_mix_count + mixture_index];
+    for (int m = 0; m < n_mix_species; ++m) {
+      int flat =
+        base_mix_data + mixture_index * ProbParm::MAX_SPECIES_PER_MIXTURE + m;
+      int sid = prob_parm.bc_mix_species_id[flat];
+      if (sid >= 0 && sid < NUM_SPECIES) {
+        massfrac[sid] = prob_parm.bc_mix_species_val[flat];
+      }
+    }
+  } else {
+    massfrac[0] = 1.0;
+  }
+
+  amrex::Real rho_cgs = 0.0;
+  amrex::Real P_cgs = press * 10.0;
+  amrex::Real RhoH_temp = 0.0;
+
+  s_ext[TEMP] = temp;
+  eos.PYT2R(P_cgs, massfrac, s_ext[TEMP], rho_cgs);
+  s_ext[DENSITY] = rho_cgs * 1.0e3;
+  eos.TY2H(s_ext[TEMP], massfrac, RhoH_temp);
+  s_ext[RHOH] = RhoH_temp * 1.0e-4 * s_ext[DENSITY];
+
+  for (int n = 0; n < NUM_SPECIES; n++) {
+    s_ext[FIRSTSPEC + n] = massfrac[n] * s_ext[DENSITY];
+  }
+
+  s_ext[VELX] = velx;
+  s_ext[VELY] = vely;
+  s_ext[VELZ] = velz;
+  amrex::ignore_unused(idir, sgn, time, x);
+  return;
+#else
   // ******************************************************
   // X-Lo boundary condition expressions and dictionaries
   std::string xlo_press_expr =
@@ -799,6 +918,7 @@ bcnormal(
     s_ext[VELZ] = f_zhi_velz(x[0], x[1], x[2], time);
     // ******************************************************
   }
+#endif
 }
 
 AMREX_GPU_DEVICE

@@ -112,93 +112,107 @@ To compile and test using CMake, refer to the example `cmake.sh` script in the `
 
 ## Python Package
 
-PeleLMeX can now be built as a Python package using a cmake superbuild. It is recommended to use a dedicated python environment for the build such as `conda`. Create a new conda environment with Python >= 3.9, activate the environment, and then follow the instructions below.
+PeleLMeX can be built as a Python package (`pypelelmex`) with CMake.
 
-To install, follow the following steps:
+We recommend a dedicated conda environment (Python >= 3.9):
 
-1) `cd PeleLMeX/`
-2) `pip install cmake==3.30.0`
-3) `cmake -S . build_py -DPELE_PYTHON=ON -DPELE_LIB=ON`
-4) `cmake --build build_py --target pip_install`
-
-If running from conda environment on macos:
 ```bash
-cmake -S . -B build_py \
-  -DPELE_PYTHON=ON \
-  -DPELE_LIB=ON \
-  -DCMAKE_PREFIX_PATH="$CONDA_PREFIX" \
-  -DMPI_C_COMPILER="$CONDA_PREFIX/bin/mpicc" \
-  -DMPI_CXX_COMPILER="$CONDA_PREFIX/bin/mpicxx"
+conda create -n pypelelmex python=3.11
+conda activate pypelelmex
+pip install cmake==3.30.0
 ```
 
+### Common install flow
+
+Use this same final flow on all platforms after configure:
+
 ```bash
-cmake -S . -B build_py -DCMAKE_INSTALL_PREFIX="$CONDA_PREFIX"
 cmake --build build_py -j
 cmake --install build_py
 cmake --build build_py --target pip_install
 ```
 
-Afterwards, you should have a python package called `pypelelmex`.
+> Important: always set `-DCMAKE_INSTALL_PREFIX="$CONDA_PREFIX"` during configure, otherwise CMake may default to `/usr/local`.
 
-Below are optional flags commonly used:
-- `-DPELE_ENABLE_MPI=ON`: For MPI
-- `-DPELE_ENABLE_OPENMP=ON`: For OpenMP
-- `-DPELE_ENABLE_CUDA=ON`: For CUDA
-- `-DPELE_ENABLE_HIP=ON`: For HIP
-- `-DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-O3 -march=native" -DCMAKE_C_FLAGS="-O3 -march=native"`
-
-This package can then be imported into any Python script or notebook as usual. Examples usage is included in the `notebooks` directory.
-
-Temporarily, the user needs to add the following type function to the specified `mechanism.H` file:
-
-```cpp
-  // Function to get species ID by name (demo for air)
-  inline int
-  get_spec_id_by_name(const std::string& species_name)
-  {
-    static const std::unordered_map<std::string, int> species_index_map = {
-      {"O2", O2_ID}, {"N2", N2_ID},
-      // Add more species here as needed
-    };
-  
-    auto it = species_index_map.find(species_name);
-    if (it != species_index_map.end()) {
-      return it->second;
-    } else {
-      return -1; 
-    }
-  }
-```
-
-For some HPC systems you may also need to disable MPICH and do a `module load` for openmpi
-
-NOTE: might need to install mpi4py from source after `module load openmpi`...testing now...
-
-- Follow instructions to compile from scratch using github... more coming soon...
+### macOS laptop (CPU)
 
 ```bash
-export MPICC=cc  # Set MPICC to Cray compiler wrapper
-python setup.py clean
-python setup.py build --mpicc=$MPICC
-python setup.py install --prefix=/home/nwimer/mpi4py_install
+cmake -S . -B build_py \
+  -DPELE_PYTHON=ON \
+  -DPELE_LIB=ON \
+  -DPELE_ENABLE_MPI=ON \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX="$CONDA_PREFIX" \
+  -DCMAKE_PREFIX_PATH="$CONDA_PREFIX" \
+  -DMPI_C_COMPILER="$CONDA_PREFIX/bin/mpicc" \
+  -DMPI_CXX_COMPILER="$CONDA_PREFIX/bin/mpicxx"
 ```
+
+Some macOS systems also need a writable temp directory for MPI:
 
 ```bash
-export OMPI_MCA_mtl=^ofi
-export OMPI_MCA_pml=^ucx
-export OMPI_MCA_btl=^ofi
-
+export TMPDIR="$HOME/.pypelelmex_tmp"
+export OMPI_MCA_orte_tmpdir_base="$TMPDIR"
+export OMPI_MCA_prte_tmpdir_base="$TMPDIR"
+mkdir -p "$TMPDIR" && chmod 700 "$TMPDIR"
 ```
 
-If you are running on Kestrel GPUs:
+Then run the common install flow above.
+
+### Kestrel HPC (CPU)
 
 ```bash
-module purge;
-module load PrgEnv-gnu/8.5.0;
-module load cuda/12.3;
-module load craype-x86-milan;
-make realclean; make -j COMP=gnu USE_CUDA=TRUE
+module purge
+module load PrgEnv-gnu/8.5.0
+module load craype-x86-milan
+
+cmake -S . -B build_py \
+  -DPELE_PYTHON=ON \
+  -DPELE_LIB=ON \
+  -DPELE_ENABLE_MPI=ON \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX="$CONDA_PREFIX" \
+  -DCMAKE_PREFIX_PATH="$CONDA_PREFIX" \
+  -DMPI_C_COMPILER=$(which mpicc) \
+  -DMPI_CXX_COMPILER=$(which mpicxx)
 ```
+
+Then run the common install flow above.
+
+### Kestrel HPC (GPU, NVIDIA/CUDA)
+
+```bash
+module purge
+module load PrgEnv-gnu/8.5.0
+module load cuda/12.3
+module load craype-x86-milan
+
+cmake -S . -B build_py \
+  -DPELE_PYTHON=ON \
+  -DPELE_LIB=ON \
+  -DPELE_ENABLE_MPI=ON \
+  -DPELE_ENABLE_CUDA=ON \
+  -DAMREX_GPU_BACKEND=CUDA \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX="$CONDA_PREFIX" \
+  -DCMAKE_PREFIX_PATH="$CONDA_PREFIX" \
+  -DCMAKE_CUDA_COMPILER=/nopt/cuda/12.3/bin/nvcc \
+  -DCUDA_TOOLKIT_ROOT_DIR=/nopt/cuda/12.3 \
+  -DMPI_C_COMPILER=$(which mpicc) \
+  -DMPI_CXX_COMPILER=$(which mpicxx)
+```
+
+Then run the common install flow above.
+
+After install, verify:
+
+```bash
+python -c "import pypelelmex; print('pypelelmex import ok')"
+```
+
+Optional useful flags:
+- `-DPELE_ENABLE_OPENMP=ON`
+- `-DCMAKE_CXX_FLAGS="-O3 -march=native" -DCMAKE_C_FLAGS="-O3 -march=native"`
 
 Some macOS systems will need a dedicated temp directory:
 

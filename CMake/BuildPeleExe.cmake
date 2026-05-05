@@ -135,9 +135,11 @@ function(build_pele_exe pele_exe_name pele_physics_lib_name)
     target_link_libraries(${pele_exe_name} PRIVATE ${pele_physics_lib_name} AMReX-Hydro::amrex_hydro_api AMReX::amrex)
   endif()
 
-  install(TARGETS ${pele_exe_name}
-          RUNTIME DESTINATION bin
-          ARCHIVE DESTINATION lib
-          LIBRARY DESTINATION lib)
+  if (NOT PELE_LIB)
+    install(TARGETS ${pele_exe_name}
+            RUNTIME DESTINATION bin
+            ARCHIVE DESTINATION lib
+            LIBRARY DESTINATION lib)
+  endif()
 
 endfunction()

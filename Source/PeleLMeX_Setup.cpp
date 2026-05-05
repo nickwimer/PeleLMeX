@@ -177,6 +177,7 @@ PeleLM::Setup()
 
   // Problem parameters
   readProbParm();
+  buildProbParmRuntime();
 
   // Initialize ambient pressure
   // Will be overwritten on restart.
