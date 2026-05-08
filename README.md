@@ -125,6 +125,29 @@ conda activate pypelelmex
 pip install cmake==3.30.0
 ```
 
+### Pre-install instructions
+
+Temporarily, the user needs to add this additional code block in PelePhysics/Mechanisms/air/mechanism.H after doing `submodule update --init --recursive`. This will be included in a later patch to PelePhysics.
+
+```cpp
+// Function to get species ID by name
+inline int
+get_spec_id_by_name(const std::string& species_name)
+{
+  static const std::unordered_map<std::string, int> species_index_map = {
+    {"O2", O2_ID}, {"N2", N2_ID},
+    // Add more species here as needed
+  };
+
+  auto it = species_index_map.find(species_name);
+  if (it != species_index_map.end()) {
+    return it->second;
+  } else {
+    return -1;
+  }
+}
+```
+
 ### Common install flow
 
 Use this same final flow on all platforms after configure:
@@ -149,6 +172,13 @@ cmake -S . -B build_py \
   -DCMAKE_PREFIX_PATH="$CONDA_PREFIX" \
   -DMPI_C_COMPILER="$CONDA_PREFIX/bin/mpicc" \
   -DMPI_CXX_COMPILER="$CONDA_PREFIX/bin/mpicxx"
+```
+
+Optional arguments if not set properly in cmake configs:
+
+```bash
+  -DPeleLMeX_pyamrex_branch=26.02 \
+  -DPeleLMeX_pybind11_branch=v3.0.1
 ```
 
 Some macOS systems also need a writable temp directory for MPI:

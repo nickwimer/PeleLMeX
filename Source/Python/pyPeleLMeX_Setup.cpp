@@ -44,11 +44,13 @@ initAmrex(const std::string& input_file, MPI_Comm mpi_comm)
     args.push_back(input_file); // The input file argument
   }
 
-  argc = args.size();
-  std::vector<char*> cstr_args(argc);
+  argc = static_cast<int>(args.size());
+  // argv must be null-terminated for MPI runtimes that iterate until nullptr.
+  std::vector<char*> cstr_args(static_cast<std::size_t>(argc) + 1, nullptr);
   for (size_t i = 0; i < args.size(); ++i) {
     cstr_args[i] = &args[i][0];
   }
+  cstr_args[static_cast<std::size_t>(argc)] = nullptr;
   argv = cstr_args.data();
 
   // amr_mesh_instance = std::make_shared<amrex::AmrMesh>();

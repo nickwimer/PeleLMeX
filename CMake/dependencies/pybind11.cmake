@@ -52,7 +52,7 @@ option(PeleLMeX_pybind11_internal "Download & build pybind11" ON)
 set(PeleLMeX_pybind11_repo "https://github.com/pybind/pybind11.git"
     CACHE STRING
     "Repository URI to pull and build pybind11 from if(PeleLMeX_pybind11_internal)")
-set(PeleLMeX_pybind11_branch "v2.12.0"
+set(PeleLMeX_pybind11_branch "v3.0.1"
     CACHE STRING
     "Repository branch for PeleLMeX_pybind11_repo if(PeleLMeX_pybind11_internal)")
 

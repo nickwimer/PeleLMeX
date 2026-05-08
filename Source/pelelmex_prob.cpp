@@ -23,6 +23,20 @@ toStringOrDefault(const char* ptr, const char* fallback)
   return ptr != nullptr ? std::string(ptr) : std::string(fallback);
 }
 
+inline void
+free_cstr(char*& p)
+{
+  delete[] p;
+  p = nullptr;
+}
+
+template <typename... Ptrs>
+inline void
+free_cstrs(Ptrs&... ptrs)
+{
+  (free_cstr(ptrs), ...);
+}
+
 void
 parseAndPackSpeciesDict(
   const std::string& dict_str,
@@ -325,6 +339,113 @@ PeleLM::readProbParm() // NOLINT(readability-make-member-function-const)
   queryAndAllocateString(
     pp, "bc_zhi_spec_dict", PeleLM::prob_parm->bc_zhi_spec_dict);
   // ************************************************************
+}
+
+void
+PeleLM::freeProbParm()
+{
+  if (prob_parm == nullptr) {
+    m_prob_parsers.clear();
+    return;
+  }
+
+  // IC strings
+  free_cstrs(
+    prob_parm->ic_x_expr,
+    prob_parm->ic_x_dict,
+    prob_parm->ic_y_expr,
+    prob_parm->ic_y_dict,
+    prob_parm->ic_z_expr,
+    prob_parm->ic_z_dict,
+    prob_parm->ic_press_expr,
+    prob_parm->ic_press_dict,
+    prob_parm->ic_temp_expr,
+    prob_parm->ic_temp_dict,
+    prob_parm->ic_velx_expr,
+    prob_parm->ic_velx_dict,
+    prob_parm->ic_vely_expr,
+    prob_parm->ic_vely_dict,
+    prob_parm->ic_velz_expr,
+    prob_parm->ic_velz_dict,
+    prob_parm->ic_spec_expr,
+    prob_parm->ic_spec_dict);
+
+  // BC strings
+  free_cstrs(
+    prob_parm->bc_xlo_press_expr,
+    prob_parm->bc_xlo_press_dict,
+    prob_parm->bc_xlo_temp_expr,
+    prob_parm->bc_xlo_temp_dict,
+    prob_parm->bc_xlo_spec_expr,
+    prob_parm->bc_xlo_spec_dict,
+    prob_parm->bc_xlo_velx_expr,
+    prob_parm->bc_xlo_velx_dict,
+    prob_parm->bc_xlo_vely_expr,
+    prob_parm->bc_xlo_vely_dict,
+    prob_parm->bc_xlo_velz_expr,
+    prob_parm->bc_xlo_velz_dict,
+    prob_parm->bc_xhi_press_expr,
+    prob_parm->bc_xhi_press_dict,
+    prob_parm->bc_xhi_temp_expr,
+    prob_parm->bc_xhi_temp_dict,
+    prob_parm->bc_xhi_spec_expr,
+    prob_parm->bc_xhi_spec_dict,
+    prob_parm->bc_xhi_velx_expr,
+    prob_parm->bc_xhi_velx_dict,
+    prob_parm->bc_xhi_vely_expr,
+    prob_parm->bc_xhi_vely_dict,
+    prob_parm->bc_xhi_velz_expr,
+    prob_parm->bc_xhi_velz_dict,
+    prob_parm->bc_ylo_press_expr,
+    prob_parm->bc_ylo_press_dict,
+    prob_parm->bc_ylo_temp_expr,
+    prob_parm->bc_ylo_temp_dict,
+    prob_parm->bc_ylo_spec_expr,
+    prob_parm->bc_ylo_spec_dict,
+    prob_parm->bc_ylo_velx_expr,
+    prob_parm->bc_ylo_velx_dict,
+    prob_parm->bc_ylo_vely_expr,
+    prob_parm->bc_ylo_vely_dict,
+    prob_parm->bc_ylo_velz_expr,
+    prob_parm->bc_ylo_velz_dict,
+    prob_parm->bc_yhi_press_expr,
+    prob_parm->bc_yhi_press_dict,
+    prob_parm->bc_yhi_temp_expr,
+    prob_parm->bc_yhi_temp_dict,
+    prob_parm->bc_yhi_spec_expr,
+    prob_parm->bc_yhi_spec_dict,
+    prob_parm->bc_yhi_velx_expr,
+    prob_parm->bc_yhi_velx_dict,
+    prob_parm->bc_yhi_vely_expr,
+    prob_parm->bc_yhi_vely_dict,
+    prob_parm->bc_yhi_velz_expr,
+    prob_parm->bc_yhi_velz_dict,
+    prob_parm->bc_zlo_press_expr,
+    prob_parm->bc_zlo_press_dict,
+    prob_parm->bc_zlo_temp_expr,
+    prob_parm->bc_zlo_temp_dict,
+    prob_parm->bc_zlo_spec_expr,
+    prob_parm->bc_zlo_spec_dict,
+    prob_parm->bc_zlo_velx_expr,
+    prob_parm->bc_zlo_velx_dict,
+    prob_parm->bc_zlo_vely_expr,
+    prob_parm->bc_zlo_vely_dict,
+    prob_parm->bc_zlo_velz_expr,
+    prob_parm->bc_zlo_velz_dict,
+    prob_parm->bc_zhi_press_expr,
+    prob_parm->bc_zhi_press_dict,
+    prob_parm->bc_zhi_temp_expr,
+    prob_parm->bc_zhi_temp_dict,
+    prob_parm->bc_zhi_spec_expr,
+    prob_parm->bc_zhi_spec_dict,
+    prob_parm->bc_zhi_velx_expr,
+    prob_parm->bc_zhi_velx_dict,
+    prob_parm->bc_zhi_vely_expr,
+    prob_parm->bc_zhi_vely_dict,
+    prob_parm->bc_zhi_velz_expr,
+    prob_parm->bc_zhi_velz_dict);
+
+  m_prob_parsers.clear();
 }
 
 void

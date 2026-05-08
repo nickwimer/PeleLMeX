@@ -76,7 +76,7 @@ option(PeleLMeX_pyamrex_internal "Download & build pyAMReX" ON)
 set(PeleLMeX_pyamrex_repo "https://github.com/AMReX-Codes/pyamrex.git"
     CACHE STRING
     "Repository URI to pull and build pyamrex from if(PeleLMeX_pyamrex_internal)")
-set(PeleLMeX_pyamrex_branch "24.07"
+set(PeleLMeX_pyamrex_branch "26.02"
     CACHE STRING
     "Repository branch for PeleLMeX_pyamrex_repo if(PeleLMeX_pyamrex_internal)")
 

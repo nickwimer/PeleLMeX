@@ -7,6 +7,7 @@
 #include <AMReX_Parser.H>
 
 #include <PeleLMeX_Index.H>
+#include <PeleLMeX_ProblemSpecificFunctions.H>
 #include <pelelmex_prob_parm.H>
 #include <PMFData.H>
 #include <PelePhysics.H>
@@ -941,4 +942,109 @@ zero_visc(
   // otherwise this routine could be called for other face diffusivity (Temp,
   // velocity, ...)
 }
+
+struct MyProblemSpecificFunctions : DefaultProblemSpecificFunctions
+{
+  AMREX_GPU_DEVICE
+  AMREX_FORCE_INLINE
+  static void initdata(
+    int i,
+    int j,
+    int k,
+    int is_incompressible,
+    amrex::Array4<amrex::Real> const& state,
+    amrex::Array4<amrex::Real> const& aux,
+    amrex::GeometryData const& geomdata,
+    ProbParm const& prob_parm,
+    pele::physics::PMF::PmfData::DataContainer const* pmf_data)
+  {
+    ::pelelmex_initdata(
+      i, j, k, is_incompressible, state, aux, geomdata, prob_parm, pmf_data);
+  }
+
+  AMREX_GPU_DEVICE
+  AMREX_FORCE_INLINE
+  static void bcnormal(
+    const amrex::Real x[AMREX_SPACEDIM],
+    const amrex::CellData<amrex::Real>& /*s_in*/,
+    amrex::Real s_ext[NVAR],
+    const int idir,
+    const int sgn,
+    const amrex::Real time,
+    amrex::GeometryData const& geomdata,
+    ProbParm const& prob_parm,
+    pele::physics::PMF::PmfData::DataContainer const* pmf_data)
+  {
+    ::bcnormal(x, 0, s_ext, idir, sgn, time, geomdata, prob_parm, pmf_data);
+  }
+
+  AMREX_GPU_DEVICE
+  AMREX_FORCE_INLINE
+  static void bcnormal_aux(
+    const amrex::Real x[AMREX_SPACEDIM],
+    amrex::CellData<amrex::Real>& aux_ext,
+    const int idir,
+    const int sgn,
+    const amrex::Real time,
+    amrex::GeometryData const& geomdata,
+    ProbParm const& prob_parm,
+    pele::physics::PMF::PmfData::DataContainer const* pmf_data)
+  {
+    amrex::ignore_unused(
+      x, aux_ext, idir, sgn, time, geomdata, prob_parm, pmf_data);
+  }
+
+  AMREX_GPU_DEVICE
+  AMREX_FORCE_INLINE
+  static void zero_visc(
+    int i,
+    int j,
+    int k,
+    amrex::Array4<amrex::Real> const& beta,
+    amrex::GeometryData const& geomdata,
+    amrex::Box const& domainBox,
+    const int dir,
+    const int beta_comp,
+    const int nComp,
+    ProbParm const& /*prob_parm*/)
+  {
+    ::zero_visc(i, j, k, beta, geomdata, domainBox, dir, beta_comp, nComp);
+  }
+
+  static void modify_ext_sources(
+    amrex::Real time,
+    amrex::Real dt,
+    const amrex::MultiFab& state_old,
+    const amrex::MultiFab& state_new,
+    std::unique_ptr<amrex::MultiFab>& ext_src,
+    const amrex::GeometryData& geomdata,
+    const ProbParm* prob_parm_d)
+  {
+    amrex::ignore_unused(
+      time, dt, state_old, state_new, ext_src, geomdata, prob_parm_d);
+  }
+
+  static void patchFlowVariables(
+    const amrex::Geometry& geom,
+    ProbParm const& prob_parm,
+    amrex::MultiFab& a_mf)
+  {
+    amrex::ignore_unused(geom, prob_parm, a_mf);
+  }
+
+  static void postAdvance(
+    amrex::Real time,
+    amrex::Real dt,
+    int finest_level,
+    const amrex::Vector<amrex::MultiFab*>& state,
+    const amrex::Vector<const amrex::Geometry*>& geom,
+    const ProbParm& prob_parm,
+    const ProbParm* prob_parm_d)
+  {
+    amrex::ignore_unused(
+      time, dt, finest_level, state, geom, prob_parm, prob_parm_d);
+  }
+};
+
+using ProblemSpecificFunctions = MyProblemSpecificFunctions;
 #endif

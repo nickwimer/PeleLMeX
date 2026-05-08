@@ -49,7 +49,9 @@ PYBIND11_MODULE(PYPELELMEX_MODULE_NAME, m)
   m.attr("RHOH") = RHOH;
   m.attr("TEMP") = TEMP;
   m.attr("RHORT") = RHORT;
+#ifdef FIRSTAUX
   m.attr("FIRSTAUX") = FIRSTAUX;
+#endif
   m.attr("NVAR") = NVAR;
   m.attr("NUM_SPECIES") = NUM_SPECIES;
 }
