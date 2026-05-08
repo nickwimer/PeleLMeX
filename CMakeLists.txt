@@ -6,37 +6,13 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake")
 include(CMakePackageConfigHelpers)
 include(PeleUtils)
-include(peleFunctions)
-
-# if(NOT DEFINED CMAKE_CXX_STANDARD)
-#     set(CMAKE_CXX_STANDARD 17)
-# endif()
-# if(NOT DEFINED CMAKE_CXX_EXTENSIONS)
-#     set(CMAKE_CXX_EXTENSIONS OFF)
-# endif()
-# if(NOT DEFINED CMAKE_CXX_STANDARD_REQUIRED)
-#     set(CMAKE_CXX_STANDARD_REQUIRED ON)
-# endif()
-
-# if(NOT DEFINED CMAKE_CUDA_STANDARD)
-#     set(CMAKE_CUDA_STANDARD 17)
-# endif()
-# if(NOT DEFINED CMAKE_CUDA_EXTENSIONS)
-#     set(CMAKE_CUDA_EXTENSIONS OFF)
-# endif()
-# if(NOT DEFINED CMAKE_CUDA_STANDARD_REQUIRED)
-#     set(CMAKE_CUDA_STANDARD_REQUIRED ON)
-# endif()
-
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
-
-# # Output Dircetories
-# set_default_build_dirs()
-# set_default_install_dirs()
 enable_testing()
 include(CTest)
 include(peleFunctions)
+
+# Output Dircetories
+set_default_build_dirs()
+set_default_install_dirs()
 
 # General options
 include(CMakeDependentOption)
@@ -463,33 +439,6 @@ if (PELE_PYTHON)
     list(APPEND PeleLMeX_INSTALL_TARGET_NAMES ${pele_physics_lib_name})
     list(APPEND PeleLMeX_INSTALL_TARGET_NAMES ${pele_exe_name})
     list(APPEND PeleLMeX_INSTALL_TARGET_NAMES pyPeleLMeX)
-  endforeach()
-
-  list(REMOVE_DUPLICATES PeleLMeX_INSTALL_TARGET_NAMES)
-
-  install(TARGETS ${PeleLMeX_INSTALL_TARGET_NAMES}
-    EXPORT ${PROJECT_NAME}Targets
-    # EXPORT PeleLMeXTargets
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-  )
-
-    # simplified library alias
-    if(IS_ABSOLUTE ${CMAKE_INSTALL_LIBDIR})
-        set(ABS_INSTALL_LIB_DIR "${CMAKE_INSTALL_LIBDIR}")
-    else()
-        set(ABS_INSTALL_LIB_DIR "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
-    endif()
-    # escape spaces for generated cmake_install.cmake file
-    file(TO_CMAKE_PATH "${ABS_INSTALL_LIB_DIR}" ABS_INSTALL_LIB_DIR)
-
-    install(CODE "file(CREATE_LINK
-        $<TARGET_FILE_NAME:${pele_exe_name}>
-        \"${ABS_INSTALL_LIB_DIR}/libpelelmex<TARGET_FILE_SUFFIX:${pele_exe_name}>\"
-        COPY_ON_ERROR SYMBOLIC)")
   endforeach()
 
   list(REMOVE_DUPLICATES PeleLMeX_INSTALL_TARGET_NAMES)

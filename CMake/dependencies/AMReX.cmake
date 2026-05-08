@@ -274,7 +274,7 @@ set(PeleLMeX_amrex_src ""
 set(PeleLMeX_amrex_repo "https://github.com/AMReX-Codes/amrex.git"
     CACHE STRING
     "Repository URI to pull and build AMReX from if(PeleLMeX_amrex_internal)")
-set(PeleLMeX_amrex_branch "24.07"
+set(PeleLMeX_amrex_branch "26.02"
     CACHE STRING
     "Repository branch for PeleLMeX_amrex_repo if(PeleLMeX_amrex_internal)")
 
